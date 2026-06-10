@@ -20,7 +20,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Used to take a profile photo.",
         "NSPhotoLibraryUsageDescription": "Used to select a profile photo.",
-        "NSPhotoLibraryAddOnlyUsageDescription": "Used to save photos to your library."
+        "NSPhotoLibraryAddOnlyUsageDescription": "Used to save photos to your library.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -29,7 +30,10 @@
         "backgroundColor": "#0A0A0A"
       },
       "package": "com.braxton.restaurant",
-      "versionCode": 1
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -58,7 +62,11 @@
       "typedRoutes": true
     },
     "extra": {
-      "eas": {}
-    }
+      "eas": {
+        "projectId": "3aed1e5b-0e5b-4505-ad89-93295698b68f"
+      },
+      "router": {}
+    },
+    "owner": "jagdeepn"
   }
 }
