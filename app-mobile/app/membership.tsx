@@ -1,29 +1,24 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, StyleSheet, Alert, Pressable, ActivityIndicator } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/Button';
 import { useAppMenu } from '@/components/AppMenu';
 import { useAuthContext } from '@/components/AuthProvider';
 import { createCheckoutSession } from '@/lib/stripe';
 import { Colors } from '@/constants/colors';
-import { Spacing, Radius } from '@/constants/theme';
+import { Fonts, Spacing, Radius } from '@/constants/theme';
 
-const PRICE_DISPLAY = process.env.EXPO_PUBLIC_MEMBERSHIP_PRICE_DISPLAY ?? '£19.99 / month';
+const PRICE_RAW = process.env.EXPO_PUBLIC_MEMBERSHIP_PRICE_DISPLAY ?? '£19.99 / month';
+const PRICE_AMOUNT = PRICE_RAW.split('/')[0].trim(); // "£19.99"
 const PREMIUM_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '';
 
-const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [
-  { icon: 'cafe-outline', label: 'ONE COMPLIMENTARY COFFEE EVERY MONTH' },
-  { icon: 'pricetag-outline', label: 'EXCLUSIVE MEMBER RATES ON THE MENU' },
-  { icon: 'calendar-outline', label: 'PRIORITY SEATING AND RESERVATIONS' },
-  { icon: 'sparkles-outline', label: 'INVITATIONS TO MEMBER-ONLY EVENTS' },
-];
+const BORDER = 'rgba(255,255,255,0.2)';
 
 export default function MembershipScreen() {
   const { open } = useAppMenu();
@@ -31,7 +26,8 @@ export default function MembershipScreen() {
   const { isLoggedIn } = useAuthContext();
   const [loading, setLoading] = useState(false);
 
-  async function handleBecomeMember() {
+  async function handleSubscribe() {
+    Haptics.selectionAsync().catch(() => {});
     if (!isLoggedIn) {
       router.push('/(auth)/signup');
       return;
@@ -52,128 +48,215 @@ export default function MembershipScreen() {
   }
 
   return (
-    <Screen scroll contentStyle={styles.content}>
-      <Header title="MEMBERSHIP" showBack onMenu={open} />
+    <Screen scroll contentStyle={styles.content} backgroundColor="#000">
+      <Header title="PREMIUM SUBSCRIPTION" showBack onMenu={open} />
 
+      {/* Value proposition */}
       <View style={styles.intro}>
-        <Text variant="title" center style={styles.introTitle}>
-          Your Daily Coffee, Perfected
-        </Text>
-        <Text variant="caption" center tracking={2} style={styles.introSub}>
-          JOIN OUR EXCLUSIVE MEMBERSHIP AND ELEVATE EVERY VISIT
+        <Text style={styles.valueTitle}>YOUR DAILY COFFEE</Text>
+        <Text style={styles.valueTitle}>PERFECTED</Text>
+        <Text style={styles.valueSub}>
+          JOIN OUR EXCLUSIVE MEMBERSHIP AND ELEVATE YOUR COFFEE EXPERIENCE
         </Text>
       </View>
 
-      {/* Premium membership card */}
-      <LinearGradient
-        colors={[Colors.goldBorder, Colors.goldBorderSoft, 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.cardBorder}
-      >
-        <View style={styles.cardInner}>
-          <View style={styles.crownBadge}>
-            <Ionicons name="ribbon-outline" size={24} color={Colors.gold} />
-          </View>
-          <Text variant="heading" center tracking={4} color={Colors.gold}>
-            PREMIUM MEMBERSHIP
-          </Text>
-          <Text variant="display" center style={styles.price}>
-            {PRICE_DISPLAY}
-          </Text>
-          <Text variant="caption" center tracking={2} style={styles.cancelNote}>
-            CANCEL ANYTIME • SECURE PAYMENT
-          </Text>
-        </View>
-      </LinearGradient>
+      {/* Price */}
+      <View style={styles.priceCard}>
+        <Text style={styles.priceAmount}>{PRICE_AMOUNT}</Text>
+        <Text style={styles.pricePeriod}>PER MONTH</Text>
+      </View>
 
       {/* Benefits */}
-      <Text variant="heading" center tracking={4} style={styles.benefitsTitle}>
-        MEMBERSHIP BENEFITS
-      </Text>
+      <Text style={styles.benefitsTitle}>MEMBERSHIP BENEFITS</Text>
 
-      <View style={styles.benefits}>
-        {BENEFITS.map((benefit) => (
-          <View key={benefit.label} style={styles.benefitRow}>
-            <View style={styles.benefitIcon}>
-              <Ionicons name={benefit.icon} size={20} color={Colors.gold} />
-            </View>
-            <Text variant="label" tracking={1} style={styles.benefitLabel}>
-              {benefit.label}
-            </Text>
-          </View>
-        ))}
+      <View style={styles.benefitCard}>
+        <View style={styles.benefitIcon}>
+          <Ionicons name="cafe-outline" size={24} color={Colors.white} />
+        </View>
+        <Text style={styles.benefitLabel}>1 FREE PREMIUM COFFEE DAILY</Text>
       </View>
 
-      {/* CTAs */}
-      <View style={styles.actions}>
-        <Button label="BECOME A MEMBER" onPress={handleBecomeMember} loading={loading} />
-        <Button
-          label="ALREADY A MEMBER? SIGN IN"
-          variant="ghost"
-          onPress={() => router.push('/(auth)/login')}
-        />
+      <View style={styles.benefitCard}>
+        <View style={styles.benefitIcon}>
+          <Ionicons name="calendar-outline" size={24} color={Colors.white} />
+        </View>
+        <Text style={styles.benefitLabel}>7 DAYS A WEEK, EVERY DAY</Text>
       </View>
 
-      <Text variant="caption" center tracking={1} style={styles.terms}>
-        BY SUBSCRIBING, YOU AGREE TO OUR TERMS AND PRIVACY POLICY
-      </Text>
+      <View style={styles.benefitCard}>
+        <View style={styles.benefitIcon}>
+          <MaterialCommunityIcons name="crown-outline" size={26} color={Colors.white} />
+        </View>
+        <Text style={styles.benefitLabel}>EXCLUSIVE MEMBER PERKS</Text>
+      </View>
+
+      {/* CTAs — dark styling, no gold/yellow fill */}
+      <Pressable
+        onPress={handleSubscribe}
+        disabled={loading}
+        style={({ pressed }) => [styles.ctaPrimary, pressed && styles.pressed]}
+      >
+        {loading ? (
+          <ActivityIndicator color={Colors.white} />
+        ) : (
+          <Text style={styles.ctaPrimaryText}>SIGN UP AND SUBSCRIBE</Text>
+        )}
+      </Pressable>
+
+      <Pressable
+        onPress={() => router.push('/(auth)/login')}
+        style={({ pressed }) => [styles.ctaSecondary, pressed && styles.pressed]}
+      >
+        <Text style={styles.ctaSecondaryText}>ALREADY A MEMBER - LOG IN</Text>
+      </Pressable>
+
+      {/* Trust */}
+      <Text style={styles.trust}>CANCEL ANYTIME • SECURE PAYMENT</Text>
+      <Text style={styles.terms}>BY SUBSCRIBING, YOU AGREE TO OUR TERMS AND PRIVACY POLICY</Text>
     </Screen>
   );
 }
 
+const FONT = Fonts.family;
+
 const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
-  intro: { marginTop: Spacing.xl, marginBottom: Spacing.xl, alignItems: 'center' },
-  introTitle: { marginBottom: Spacing.md },
-  introSub: { maxWidth: 300 },
-  cardBorder: {
-    borderRadius: Radius.lg,
-    padding: 1.5,
+
+  intro: { alignItems: 'center', paddingVertical: Spacing.xl },
+  valueTitle: {
+    fontFamily: FONT,
+    fontWeight: '500',
+    fontSize: 24,
+    letterSpacing: 1.5,
+    color: Colors.white,
+    textAlign: 'center',
+  },
+  valueSub: {
+    fontFamily: FONT,
+    fontWeight: '400',
+    fontSize: 11,
+    letterSpacing: 2,
+    lineHeight: 18,
+    color: 'rgba(255,255,255,0.4)',
+    textAlign: 'center',
+    marginTop: Spacing.lg,
+    maxWidth: 280,
+  },
+
+  priceCard: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 28,
+    paddingVertical: Spacing.xl,
+    alignItems: 'center',
     marginBottom: Spacing.xl,
   },
-  cardInner: {
-    borderRadius: Radius.lg - 1,
-    backgroundColor: Colors.surface,
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
+  priceAmount: {
+    fontFamily: FONT,
+    fontWeight: '600',
+    fontSize: 40,
+    letterSpacing: 2,
+    color: Colors.white,
+    marginBottom: 6,
   },
-  crownBadge: {
+  pricePeriod: {
+    fontFamily: FONT,
+    fontWeight: '400',
+    fontSize: 11,
+    letterSpacing: 2,
+    color: 'rgba(255,255,255,0.6)',
+  },
+
+  benefitsTitle: {
+    fontFamily: FONT,
+    fontWeight: '600',
+    fontSize: 12,
+    letterSpacing: 3,
+    color: Colors.white,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  benefitCard: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 28,
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  benefitIcon: {
     width: 48,
     height: 48,
-    borderRadius: Radius.pill,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: Colors.goldBorder,
-    backgroundColor: Colors.goldGlow,
+    borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
   },
-  price: { marginTop: Spacing.md, marginBottom: Spacing.sm },
-  cancelNote: { marginTop: Spacing.xs },
-  benefitsTitle: { marginBottom: Spacing.lg },
-  benefits: { gap: Spacing.md, marginBottom: Spacing.xl },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.goldBorder,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surface,
-    padding: Spacing.md,
+  benefitLabel: {
+    fontFamily: FONT,
+    fontWeight: '500',
+    fontSize: 12,
+    letterSpacing: 1,
+    color: Colors.white,
+    textAlign: 'center',
   },
-  benefitIcon: {
-    width: 44,
-    height: 44,
+
+  ctaPrimary: {
+    height: 56,
     borderRadius: Radius.pill,
+    backgroundColor: Colors.surfaceElevated, // dark, not gold
     borderWidth: 1,
-    borderColor: Colors.goldBorder,
+    borderColor: BORDER,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: Spacing.xl,
   },
-  benefitLabel: { flex: 1, lineHeight: 18 },
-  actions: { gap: Spacing.md, marginBottom: Spacing.lg },
-  terms: { maxWidth: 300, alignSelf: 'center' },
+  ctaPrimaryText: {
+    fontFamily: FONT,
+    fontWeight: '600',
+    fontSize: 12,
+    letterSpacing: 2,
+    color: Colors.white,
+  },
+  ctaSecondary: {
+    height: 52,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.md,
+  },
+  ctaSecondaryText: {
+    fontFamily: FONT,
+    fontWeight: '400',
+    fontSize: 12,
+    letterSpacing: 2,
+    color: Colors.white,
+  },
+  pressed: { opacity: 0.7 },
+
+  trust: {
+    fontFamily: FONT,
+    fontWeight: '400',
+    fontSize: 11,
+    letterSpacing: 1,
+    color: 'rgba(255,255,255,0.4)',
+    textAlign: 'center',
+    marginTop: Spacing.xl,
+  },
+  terms: {
+    fontFamily: FONT,
+    fontWeight: '400',
+    fontSize: 10,
+    letterSpacing: 1,
+    color: 'rgba(255,255,255,0.3)',
+    textAlign: 'center',
+    marginTop: Spacing.md,
+    maxWidth: 300,
+    alignSelf: 'center',
+  },
 });
