@@ -1,424 +1,240 @@
-// Cafe Locco menu — extracted verbatim from the genuine Figma design
-// Source of truth: figma-reference/src/app/components/MenuPage.tsx
+// Cafe Locco menu — imported from the approved MENU_DRAFT_FOR_VERIFICATION.md
+// (transcribed from the official cafelocco.com menu PDF).
+import { Ionicons } from '@expo/vector-icons';
+
+export type Diet = 'V' | 'VG' | 'GF';
 
 export interface MenuItem {
   name: string;
   description?: string;
-  price: string;
+  price: string; // numeric string, shown with a £ prefix
+  diet?: Diet[];
+  note?: string; // e.g. "GF option available", "+£2.50 chicken"
 }
 
-export const categories = [
-    { id: 'breakfast', label: 'BREAKFAST' },
-    { id: 'classics', label: 'CLASSICS' },
-    { id: 'appetisers', label: 'APPETISERS' },
-    { id: 'bowls', label: 'BOWLS' },
-    { id: 'favourites', label: 'FAVOURITES' },
-    { id: 'burgers', label: 'BURGERS' },
-    { id: 'wraps', label: 'WRAPS' },
-    { id: 'kids', label: 'LOCCO KIDS' },
-    { id: 'sides', label: 'SIDES' },
-    { id: 'sweets', label: 'SWEET PLATES' },
-    { id: 'drinks', label: 'DRINK EDIT' },
-    { id: 'soft-drinks', label: 'SOFT DRINKS' },
-    { id: 'mocktails', label: 'MOCKTAILS' },
-  ];
+export interface MenuCategory {
+  id: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  note?: string;
+  items: MenuItem[];
+}
 
-export const menuItems: Record<string, MenuItem[]> = {
-    breakfast: [
-      {
-        name: 'LOCCO BREAKFAST',
-        description: 'Two free-range eggs any style, two turkey rashers, lamb sausage, baked beans, garlic mushrooms, roasted tomato, hash brown, and choice of toast.',
-        price: '13.49'
-      },
-      {
-        name: 'TRADITIONAL DESI BREAKFAST',
-        description: 'Two free-range eggs any style, house keema, masala chaats, spiced beans, roasted tomato, and choice of paratha or puri.',
-        price: '13.49'
-      },
-      {
-        name: 'VEGGIE BREAKFAST',
-        description: 'Two free-range eggs any style, veggie sausages, baked beans, garlic mushrooms, roasted tomato, hash brown, and choice of toast.',
-        price: '13.49'
-      },
-      {
-        name: 'VEGAN BREAKFAST',
-        description: 'Vegan scrambled eggs, veggie sausages, smashed avocado, baked beans, garlic mushrooms, roasted tomato, hash brown, and choice of toast.',
-        price: '13.49'
-      },
-      {
-        name: 'GLUTEN-FREE BREAKFAST',
-        description: 'Two free-range eggs any style, two turkey rashers, lamb sausage, baked beans, garlic mushrooms, roasted tomato, and hash brown.',
-        price: '13.49'
-      },
+export const DIET_LABELS: Record<Diet, string> = {
+  V: 'Vegetarian',
+  VG: 'Vegan',
+  GF: 'Gluten-Free',
+};
+
+export const menu: MenuCategory[] = [
+  {
+    id: 'breakfast',
+    label: 'BREAKFAST',
+    icon: 'sunny-outline',
+    items: [
+      { name: 'LOCCO BREAKFAST', price: '14', description: 'Scrambled egg, chicken rashers, spicy lamb sausage, baby buttered mushrooms, crispy hashbrown bites, grilled tomatoes, toasted shokupan and LOCCO beans.' },
+      { name: 'GLUTEN-FREE BREAKFAST', price: '14', diet: ['V', 'GF'], description: 'Scrambled eggs, smashed avocado, baby buttered mushrooms, grilled tomatoes, hash browns, LOCCO beans, gluten-free bread & spread.' },
+      { name: 'VEGAN BREAKFAST', price: '14', diet: ['VG'], description: 'Veggie sausage, falafel, crispy hash brown bites, baby buttered mushrooms, grilled tomatoes, garlic chilli spinach, smashed avocado, LOCCO beans, toasted sourdough & vegan spread.' },
+      { name: 'TRADITIONAL DESI BREAKFAST', price: '14', description: 'Paratha or fried puris with spiced omelette (onions, peppers, tomatoes), creamy cheese masala, crispy potato bites, sausage, zesty pickle, balsamic halwa toast.' },
+      { name: 'SPICE ME UP SCRAMBLED', price: '13.49', diet: ['V'], description: 'Hot chilli scrambled eggs, cream cheese, masala, creamy smashed avocado, LOCCO beans, toasted sourdough. Drizzled with house sauce & sriracha.' },
+      { name: 'AVO TOAST', price: '12.99', diet: ['V'], note: 'GF option available', description: 'Toasted shokupan, avocado, poached eggs, onions & tomatoes. Garnished with purple pickles, feta and salad.' },
+      { name: 'BURRATA BRUSCHETTA', price: '14.99', diet: ['V'], description: 'Toasted sourdough with garlic olive oil, smashed burrata, char-grilled vine tomatoes, balsamic glaze.' },
+      { name: 'THE DELICATE ROYALE', price: '15', diet: ['V'], description: 'Toasted muffin with spinach, chilli, cream cheese, and poached eggs, topped with hollandaise, paprika, edible petals.' },
+      { name: 'THE CHEESY ONE', price: '13.49', description: 'Toasted croissant with cream cheese, avocado, crispy chicken parmesan, chicken rashers, and poached eggs, cheese sauce and a sprinkle of parmesan.' },
+      { name: 'LAMB FRITTER STACK', price: '15.49', description: 'Crisp lamb-minced fritters layered with smashed avo, poached eggs, side of house sauce.' },
+      { name: 'GOLDEN CORN FRITTERS', price: '14.99', diet: ['V'], description: 'Corn fritters topped with poached eggs, cream cheese, smashed avocado, pickled cucumber and a house salsa of tomato, red onion, jalapeño and coriander.' },
+      { name: 'BLUSH AÇAÍ BOWL', price: '16.95', diet: ['V'], description: 'Açai base blended with protein and oat milk, topped with granola, strawberries, raspberries, blueberries, white chocolate shavings, coconut flakes, peanut butter.' },
+      { name: 'FRUITFUL GRANOLA', price: '16.95', diet: ['V'], description: 'Golden granola layered with caramelised yoghurt and peanut butter, banana, mango, strawberries and blueberries, biscoff crumbs, honey and chia seeds.' },
     ],
-    classics: [
-      {
-        name: 'AVO TOAST',
-        description: 'Smashed avocado, two poached eggs, chilli flakes, edamame beans, on choice of toast.',
-        price: '12.99'
-      },
-      {
-        name: 'TUNACADO',
-        description: 'Tuna mixed with spices, smashed avocado, two poached eggs, on choice of toast.',
-        price: '13.49'
-      },
-      {
-        name: 'MUSHROOM AVO',
-        description: 'Smashed avocado, sautéed garlic mushrooms, two poached eggs, on choice of toast.',
-        price: '13.49'
-      },
-      {
-        name: 'THE ROYALE',
-        description: 'Two poached eggs, turkey rashers, hollandaise sauce, on an English muffin.',
-        price: '13.99'
-      },
-      {
-        name: 'CHILLI-GARLIC FLORENTINE',
-        description: 'Two poached eggs, garlic and chilli spinach, hollandaise sauce, on an English muffin.',
-        price: '13.99'
-      },
-      {
-        name: 'SWEET & SOUR CRISPY CHICKEN',
-        description: 'Buttermilk marinated crispy chicken strips, topped with our house sweet and sour sauce on choice of toast.',
-        price: '13.99'
-      },
-      {
-        name: 'SPICE ME UP SCRAMBLED',
-        description: 'Chilli scrambled eggs, topped with spiced masala sauce on choice of toast.',
-        price: '12.49'
-      },
-      {
-        name: 'NUTTY SHAKSHUKA',
-        description: 'Two eggs poached in a tomato and pepper stew with a hint of peanut butter, served with choice of toast.',
-        price: '13.49'
-      },
-      {
-        name: 'HUEVOS RANCHEROS',
-        description: 'Two fried eggs, black beans, avocado, salsa, sour cream, on corn tortillas.',
-        price: '13.99'
-      },
+  },
+  {
+    id: 'sharers',
+    label: 'SHARERS',
+    icon: 'nutrition-outline',
+    note: 'All served with house sauce',
+    items: [
+      { name: 'PANEER POCKETS', price: '10', diet: ['V'], description: "Crispy dumplings filled with paneer, fresh vegetables, aromatic spices, drizzle of Locco's chilli sauce." },
+      { name: 'LAMB GYOZAS', price: '10', description: 'Crispy fried lamb dumplings stuffed with seasoned lamb and mixed vegetables, topped with sriracha mayo.' },
+      { name: 'SAMOSA CHAAT', price: '10', diet: ['V'], description: 'Crispy samosa with chickpea curry, cooling yoghurt and tangy spiced chutneys.' },
+      { name: 'SALMON & CREAM CHEESE CANAPÉ', price: '10', description: 'Delicate bites topped with smoked salmon and smooth cream cheese.' },
+      { name: 'BANG BANG PRAWNS', price: '10', description: 'Prawns deep-fried in a crispy batter, served with our secret locco sauce.' },
     ],
-    appetisers: [
-      {
-        name: 'BUFFALO WINGS',
-        description: 'Marinated chicken wings tossed in buffalo sauce, served with sour cream.',
-        price: '9.49'
-      },
-      {
-        name: 'HALLOUMI FRIES',
-        description: 'Deep fried halloumi strips served with sweet chilli sauce.',
-        price: '8.99'
-      },
-      {
-        name: 'DYNAMITE PRAWNS',
-        description: 'Panko breaded prawns tossed in dynamite sauce.',
-        price: '9.99'
-      },
-      {
-        name: 'POPPIN POPPERS',
-        description: 'Jalapeño peppers stuffed with cream cheese, deep fried and served with sour cream.',
-        price: '8.49'
-      },
-      {
-        name: 'CALAMARI',
-        description: 'Deep fried squid rings served with sweet chilli sauce and lemon wedge.',
-        price: '9.49'
-      },
-      {
-        name: 'LOADED FRIES',
-        description: 'Crispy fries loaded with melted cheese, jalapeños, and sour cream.',
-        price: '7.99'
-      },
+  },
+  {
+    id: 'burgers',
+    label: 'BURGERS',
+    icon: 'fast-food-outline',
+    note: 'With seasoned rustic fries & house sauce',
+    items: [
+      { name: 'THE WAGYU', price: '21', description: 'Double wagyu smashed beef, cheese, fried onions, salad, relish, Locco drip sauce in toasted brioche.' },
+      { name: 'VEGGIE CRUNCH', price: '17', diet: ['V'], description: 'Sesame brioche bun, grilled halloumi, smashed avocado, lettuce, mayo, sweet chilli, crunchy Heatwave Doritos.' },
+      { name: 'THE INFERNO', price: '20', description: 'Southern fried chicken breast, tikka hash brown, grilled halloumi, lettuce, mayo, sweet chilli in a sesame brioche bun.' },
+      { name: 'PRAWN ROYALE', price: '19', description: 'Golden, juicy prawn burger stacked with all the trimmings.' },
     ],
-    bowls: [
-      {
-        name: 'KOREAN BBQ BOWL',
-        description: 'Korean BBQ chicken, edamame beans, red cabbage, sweetcorn, crispy onions, sesame seeds, on a bed of rice.',
-        price: '14.49'
-      },
-      {
-        name: 'TERIYAKI SALMON BOWL',
-        description: 'Teriyaki glazed salmon, edamame beans, red cabbage, sweetcorn, sesame seeds, on a bed of rice.',
-        price: '15.99'
-      },
-      {
-        name: 'FALAFEL BOWL',
-        description: 'Falafels, hummus, mixed leaves, red cabbage, sweetcorn, red onion, on a bed of quinoa.',
-        price: '13.49'
-      },
-      {
-        name: 'PERI PERI CHICKEN BOWL',
-        description: 'Peri peri chicken, mixed peppers, red onion, sweetcorn, on a bed of rice.',
-        price: '14.49'
-      },
+  },
+  {
+    id: 'favourites',
+    label: 'FAVOURITES',
+    icon: 'star-outline',
+    items: [
+      { name: 'GOLDEN YOLK BULGOGI TOAST', price: '20', description: 'Ribeye steak and golden yolk, melted cheese; cheesy rustic fries, signature house sauce.' },
+      { name: 'LASAGNA LOADED FRIES', price: '17.49', description: 'Rustic fries loaded with minced meat, creamy béchamel, grilled cheddar; side of garlic ciabatta.' },
+      { name: 'CHICKEN PARM', price: '22', description: 'Chicken Parmigiana, Napoli sauce, mozzarella, burrata; fresh spaghetti and basil pesto.' },
+      { name: 'JERK CHICKEN PRESSED BREAD', price: '17.49', description: 'Slow-marinated chicken, smoky island spices, melted cheese pressed in golden bread; rustic fries and slaw.' },
+      { name: 'CREAMY RIGATONI', price: '16.49', diet: ['V'], note: '+£2.50 chicken / +£3.00 prawns', description: 'Creamy rigatoni, aubergine, sweetcorn, aromatic spices, burrata and parmesan.' },
+      { name: 'THE VIRAL CAESAR CRUNCH WRAP', price: '20', description: 'Southern fried chicken, lettuce, caesar dressing, parmesan, crouton crumbs in a toasted tortilla; rustic fries, house sauce.' },
     ],
-    favourites: [
-      {
-        name: 'FISH & CHIPS',
-        description: 'Beer battered cod served with chips, mushy peas, and tartar sauce.',
-        price: '16.99'
-      },
-      {
-        name: 'CHICKEN & WAFFLES',
-        description: 'Crispy chicken strips on Belgian waffles, drizzled with maple syrup.',
-        price: '15.49'
-      },
-      {
-        name: 'MAC & CHEESE',
-        description: 'Creamy macaroni cheese topped with breadcrumbs.',
-        price: '12.99'
-      },
-      {
-        name: 'STEAK & FRIES',
-        description: 'Grilled ribeye steak served with chips and peppercorn sauce.',
-        price: '22.99'
-      },
+  },
+  {
+    id: 'mains',
+    label: 'MAINS',
+    icon: 'restaurant-outline',
+    items: [
+      { name: 'PHILLY-PHULLY LOADED', price: '23', description: 'Philly steak, cheese sauce, crispy onions, portobello mushrooms, creamy garlic sauce, in a bowl with cheesy rustic fries.' },
+      { name: 'JOLLOF LAMB CHOPS', price: '23', description: 'Smoky, spice-glazed lamb chops, with tender broccoli, baby corn, carrots and green beans.' },
+      { name: 'THE CHICKEN DELI', price: '18.49', description: 'Tandoori chicken, stir-fried onions and peppers, LOCCO house sauce, melted cheese on toasted shokupan, masala rustic fries.' },
+      { name: 'THE BOMBAY MELT', price: '16.49', diet: ['V'], description: 'Golden fried sourdough filled with paneer, spiced onions, peppers, tomato and melted cheese, seasoned rustic fries, mint yoghurt.' },
+      { name: 'MASALA COD TACOS', price: '17.99', description: 'Tacos with white cod, beetroot slaw, fresh lime, mint yoghurt, feta crumble, seasoned rustic fries, house sauce.' },
+      { name: 'ROASTED ROOTS', price: '16.95', diet: ['V'], description: 'Roasted beetroot, peppery rocket, feta, pomegranate, lemon dressing, cucumber, gherkins, red and spring onions, croutons, house crumble.' },
     ],
-    burgers: [
-      {
-        name: 'LOCCO BURGER',
-        description: 'Beef patty, cheese, lettuce, tomato, pickles, LOCCO sauce, in a brioche bun.',
-        price: '14.99'
-      },
-      {
-        name: 'BUTTERMILK CHICKEN BURGER',
-        description: 'Buttermilk fried chicken, lettuce, tomato, mayo, in a brioche bun.',
-        price: '14.49'
-      },
-      {
-        name: 'HALLOUMI BURGER',
-        description: 'Grilled halloumi, roasted peppers, lettuce, pesto mayo, in a brioche bun.',
-        price: '13.99'
-      },
-      {
-        name: 'BEYOND BURGER',
-        description: 'Plant-based patty, vegan cheese, lettuce, tomato, vegan mayo, in a vegan bun.',
-        price: '14.99'
-      },
-      {
-        name: 'BBQ BACON BURGER',
-        description: 'Beef patty, turkey bacon, cheese, onion rings, BBQ sauce, in a brioche bun.',
-        price: '15.99'
-      },
+  },
+  {
+    id: 'street-bowls',
+    label: 'LOCCO STREET BOWLS',
+    icon: 'flame-outline',
+    note: 'Fragrant biryani rice, rustic fries, salad & house raita',
+    items: [
+      { name: 'CHICKEN BUTTER BE NICE', price: '20', description: 'Rich butter chicken with fragrant biryani rice and rustic fries.' },
+      { name: 'LOCCO LAMB KARAHI', price: '22', description: 'Bold LOCCO lamb karahi with fragrant biryani rice and rustic fries.' },
     ],
-    wraps: [
-      {
-        name: 'CHICKEN CAESAR WRAP',
-        description: 'Grilled chicken, lettuce, parmesan, Caesar dressing, in a tortilla wrap.',
-        price: '11.99'
-      },
-      {
-        name: 'FALAFEL WRAP',
-        description: 'Falafels, hummus, lettuce, tomato, red onion, in a tortilla wrap.',
-        price: '10.99'
-      },
-      {
-        name: 'PERI PERI CHICKEN WRAP',
-        description: 'Peri peri chicken, lettuce, tomato, mayo, in a tortilla wrap.',
-        price: '11.99'
-      },
-      {
-        name: 'HALLOUMI WRAP',
-        description: 'Grilled halloumi, roasted peppers, lettuce, pesto mayo, in a tortilla wrap.',
-        price: '10.99'
-      },
+  },
+  {
+    id: 'kids',
+    label: 'LOCCO KIDS',
+    icon: 'happy-outline',
+    note: 'Offer only eligible for Locco kids',
+    items: [
+      { name: 'CHICKEN NUGGETS AND RUSTIC FRIES', price: '10' },
+      { name: 'BEEF BURGER AND RUSTIC FRIES', price: '10' },
+      { name: 'PIZZA BREAD AND RUSTIC FRIES – CHEESE AND TOMATO', price: '10', diet: ['V'] },
     ],
-    kids: [
-      {
-        name: 'KIDS PANCAKES',
-        description: 'Fluffy pancakes with maple syrup and berries.',
-        price: '6.99'
-      },
-      {
-        name: 'KIDS CHICKEN NUGGETS',
-        description: 'Crispy chicken nuggets with chips.',
-        price: '7.99'
-      },
-      {
-        name: 'KIDS FISH FINGERS',
-        description: 'Fish fingers with chips.',
-        price: '7.99'
-      },
-      {
-        name: 'KIDS MAC & CHEESE',
-        description: 'Creamy macaroni cheese.',
-        price: '6.99'
-      },
-      {
-        name: 'KIDS BURGER',
-        description: 'Mini beef burger with chips.',
-        price: '8.49'
-      },
+  },
+  {
+    id: 'sides',
+    label: 'SIDES',
+    icon: 'pizza-outline',
+    items: [
+      { name: 'Waffle Fries', price: '5', diet: ['V'] },
+      { name: 'Crispy Potato Bites', price: '5', diet: ['V'] },
+      { name: 'Seasoned Rustic Fries', price: '5', diet: ['VG'] },
+      { name: 'Masala Rustic Fries', price: '6', diet: ['VG'] },
+      { name: 'Shokupan Toast', price: '2', diet: ['V'] },
+      { name: 'Smashed Croissant', price: '2', diet: ['V'] },
+      { name: 'Smashed Avocado', price: '3', diet: ['VG'] },
     ],
-    sides: [
-      {
-        name: 'CHIPS',
-        price: '4.49'
-      },
-      {
-        name: 'SWEET POTATO FRIES',
-        price: '4.99'
-      },
-      {
-        name: 'ONION RINGS',
-        price: '4.49'
-      },
-      {
-        name: 'GARLIC BREAD',
-        price: '3.99'
-      },
-      {
-        name: 'SIDE SALAD',
-        price: '3.99'
-      },
-      {
-        name: 'COLESLAW',
-        price: '2.99'
-      },
+  },
+  {
+    id: 'addons',
+    label: 'ADD-ONS',
+    icon: 'add-circle-outline',
+    items: [
+      { name: 'Paratha or Puri', price: '2', diet: ['V'] },
+      { name: 'Masala Chana', price: '3', diet: ['VG'] },
+      { name: 'House Keema', price: '6' },
+      { name: 'Locco Beans', price: '3', diet: ['VG'] },
+      { name: 'Garlic & Chilli Spinach', price: '3', diet: ['VG'] },
+      { name: 'Baby Buttered Mushrooms', price: '3', diet: ['V'] },
+      { name: 'Badam Halwa', price: '3', diet: ['V'] },
     ],
-    sweets: [
-      {
-        name: 'PANCAKE STACK',
-        description: 'Fluffy pancakes with maple syrup, berries, and whipped cream.',
-        price: '10.99'
-      },
-      {
-        name: 'FRENCH TOAST',
-        description: 'Brioche French toast with caramelized bananas and maple syrup.',
-        price: '10.99'
-      },
-      {
-        name: 'WAFFLES',
-        description: 'Belgian waffles with Nutella, strawberries, and ice cream.',
-        price: '11.49'
-      },
-      {
-        name: 'BROWNIE SUNDAE',
-        description: 'Warm chocolate brownie with vanilla ice cream and chocolate sauce.',
-        price: '8.99'
-      },
-      {
-        name: 'CHEESECAKE',
-        description: 'Baked vanilla cheesecake with berry compote.',
-        price: '7.99'
-      },
+  },
+  {
+    id: 'sweets',
+    label: 'SWEET PLATES',
+    icon: 'ice-cream-outline',
+    items: [
+      { name: 'TILDA CAKE', price: '13', diet: ['V'], description: 'Our signature Tilda cake — soft, indulgent, rich silky ganache, vanilla pod ice cream.' },
+      { name: 'FERRERO TIRAMISU', price: '15', diet: ['V'], description: 'Espresso sponge, Ferrero Rocher mascarpone, cocoa dust, golden Ferrero Rocher.' },
+      { name: 'DUBAI KNAFEH', price: '15', diet: ['V'], description: 'Pistachio knafeh brownie inspired by Dubai chocolate, vanilla pod ice cream.' },
+      { name: 'KINDER BUENO BITES', price: '15', diet: ['V'], description: 'Warm mini doughnuts with Kinder Bueno, vanilla pod ice cream.' },
+      { name: 'CAPPUCCINO GLUTEN-FREE CAKE', price: '12', diet: ['V', 'GF'], description: 'Vanilla sponge with cappuccino cream and cocoa dusting, vanilla ice cream.' },
+      { name: 'PISTACHIO CRÈME LECHE CAKE', price: '12', diet: ['V'], description: 'Milk-soaked sponge, white chocolate, pistachio, cream.' },
+      { name: 'CARROT CAKE', price: '13', diet: ['V'], description: 'Fresh carrot cake, cream cheese icing, white chocolate drizzle, vanilla pod ice cream.' },
+      { name: 'RASPBERRY & WHITE CHOCOLATE', price: '12', diet: ['V'], description: 'Creamy white chocolate cheesecake, raspberry swirl, buttery biscuit base, vanilla pod ice cream.' },
+      { name: "LE DOUCE FOLIE 'SWEET MADNESS'", price: '18', diet: ['V'], description: 'Golden French toast with Nutella sauce, strawberries, banana, vanilla ice cream.' },
+      { name: 'BISCOFF VEGAN CHEESECAKE', price: '12', diet: ['VG'], description: 'Creamy vegan cheesecake, spiced biscuit base, vegan vanilla ice cream.' },
     ],
-    drinks: [
-      {
-        name: 'ESPRESSO',
-        price: '2.99'
-      },
-      {
-        name: 'AMERICANO',
-        price: '3.49'
-      },
-      {
-        name: 'CAPPUCCINO',
-        price: '3.99'
-      },
-      {
-        name: 'LATTE',
-        price: '3.99'
-      },
-      {
-        name: 'FLAT WHITE',
-        price: '3.99'
-      },
-      {
-        name: 'MOCHA',
-        price: '4.49'
-      },
-      {
-        name: 'HOT CHOCOLATE',
-        price: '3.99'
-      },
-      {
-        name: 'TEA',
-        price: '2.99'
-      },
-      {
-        name: 'ICED LATTE',
-        price: '4.49'
-      },
-      {
-        name: 'ICED AMERICANO',
-        price: '3.99'
-      },
+  },
+  {
+    id: 'indulgence',
+    label: 'THE INDULGENCE BAR',
+    icon: 'sparkles-outline',
+    note: 'Lattes & matchas, hot or iced',
+    items: [
+      { name: 'KINDER BUENO SILK LATTE', price: '10' },
+      { name: 'STRAWBERRIES & CREAM MATCHA', price: '10' },
+      { name: 'FRESH COCONUT MATCHA', price: '11' },
+      { name: 'JAMMY DODGER MILKSHAKE', price: '10' },
+      { name: 'PISTACHIO CREAM SPANISH', price: '10' },
+      { name: 'MANGO CREAM MATCHA', price: '11' },
+      { name: "TERRY'S CHOCOLATE ORANGE WARM COCO", price: '10' },
     ],
-    'soft-drinks': [
-      {
-        name: 'COCA-COLA',
-        price: '3.49'
-      },
-      {
-        name: 'DIET COKE',
-        price: '3.49'
-      },
-      {
-        name: 'SPRITE',
-        price: '3.49'
-      },
-      {
-        name: 'FANTA',
-        price: '3.49'
-      },
-      {
-        name: 'ORANGE JUICE',
-        price: '3.99'
-      },
-      {
-        name: 'APPLE JUICE',
-        price: '3.99'
-      },
-      {
-        name: 'STILL WATER',
-        price: '2.49'
-      },
-      {
-        name: 'SPARKLING WATER',
-        price: '2.49'
-      },
+  },
+  {
+    id: 'brew',
+    label: 'BREW BAR',
+    icon: 'leaf-outline',
+    note: 'Teas',
+    items: [
+      { name: 'ENGLISH BREAKFAST', price: '4' },
+      { name: 'MOROCCAN MINT TEA', price: '4' },
+      { name: 'KARAK CHAI', price: '5.49' },
+      { name: 'POMEGRANATE GREEN TEA', price: '4' },
+      { name: 'SPICED APPLE CINNAMON', price: '4' },
     ],
-    mocktails: [
-      {
-        name: 'VIRGIN MOJITO',
-        price: '10'
-      },
-      {
-        name: 'STRAWBERRY DAIQUIRI',
-        price: '10'
-      },
-      {
-        name: 'PINA COLADA',
-        price: '10'
-      },
-      {
-        name: 'COCO COLADA',
-        price: '10'
-      },
-      {
-        name: 'MANGO LASSI',
-        price: '10'
-      },
-      {
-        name: 'MANGO, GINGER AND LYCHEE COOLER',
-        price: '10'
-      },
-      {
-        name: 'OCEAN WAVE',
-        price: '10'
-      },
-      {
-        name: 'WHITE WHISPER',
-        price: '10'
-      },
-      {
-        name: 'KIWI SPRITZ',
-        price: '10'
-      },
-      {
-        name: 'LOCCO PUNCH',
-        price: '12'
-      },
+  },
+  {
+    id: 'coffee',
+    label: 'HOUSE COFFEE',
+    icon: 'cafe-outline',
+    items: [
+      { name: 'FLAT WHITE', price: '4' },
+      { name: 'MOCHA', price: '5' },
+      { name: 'DOUBLE ESPRESSO', price: '3.50' },
+      { name: 'CAPPUCCINO', price: '4' },
+      { name: 'AMERICANO – WHITE OR BLACK', price: '4' },
+      { name: 'MACCHIATO', price: '4' },
     ],
-  };
+  },
+  {
+    id: 'soft-drinks',
+    label: 'SOFT DRINKS',
+    icon: 'water-outline',
+    items: [
+      { name: 'STILL WATER', price: '4' },
+      { name: 'ZANTI COLA – NORMAL OR ZERO', price: '4' },
+      { name: 'ZANTI ZEST OR ORANGE', price: '4' },
+      { name: 'REDBULL', price: '4' },
+      { name: 'SPARKLING WATER', price: '4' },
+      { name: 'ZANTI ORANGE', price: '4' },
+      { name: 'GINGER ALE', price: '4' },
+      { name: 'FRUIT SHOOT', price: '2' },
+    ],
+  },
+  {
+    id: 'mocktails',
+    label: 'MOCKTAILS',
+    icon: 'wine-outline',
+    items: [
+      { name: 'LOCCO PUNCH', price: '11', description: 'Fresh orange, pear, apple and a kick of ginger.' },
+      { name: 'STRAWBERRY MOJITO', price: '11' },
+      { name: 'COCO COLADA', price: '11' },
+      { name: 'FRESH COCONUT', price: '8' },
+      { name: 'GUAVA, COCONUT AND MANGO SMOOTHIE', price: '11' },
+      { name: 'PASSION MANGO DAIQUIRI', price: '11' },
+      { name: 'WHITE WHISPER', price: '11' },
+    ],
+  },
+];
+
+// Convenience lookups
+export const categories = menu.map((c) => ({ id: c.id, label: c.label, icon: c.icon }));
