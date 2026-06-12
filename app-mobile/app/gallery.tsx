@@ -1,170 +1,148 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  Dimensions,
+  FlatList,
   Pressable,
+  Modal,
+  Dimensions,
+  ImageSourcePropType,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
 import { useAppMenu } from '@/components/AppMenu';
-import { useAuthContext } from '@/components/AuthProvider';
-import { isAdminEmail } from '@/lib/galleryAdmin';
-import { useGallery } from '@/hooks/useGallery';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/theme';
-import { GalleryImage } from '@/lib/types';
+import { galleryImages } from '@/constants/galleryImages';
 
-const { width } = Dimensions.get('window');
 const GUTTER = Spacing.md;
-const COLUMN_WIDTH = (width - GUTTER * 2 - GUTTER) / 2;
+const COLUMNS = 2;
+// All source images are portrait 487x745 (~2:3); match the tile ratio so
+// contentFit="cover" fills the cell without cropping anything important.
+const IMAGE_RATIO = 487 / 745;
 
-/** Gallery — dark-theme 2-column photo grid backed by the gallery hook. */
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+
+/** Gallery — fixed 2-column grid of the 27 bundled images, with a
+ *  full-screen left/right swipe viewer that preserves order 01 -> 27. */
 export default function GalleryScreen() {
   const { open } = useAppMenu();
-  const router = useRouter();
-  const { user, isLoggedIn } = useAuthContext();
-  const { images, loading, refreshing, refresh } = useGallery();
-  const showAdmin = isLoggedIn && isAdminEmail(user?.email);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
-  // Split images into two balanced columns for a masonry-style layout.
-  const columns: GalleryImage[][] = [[], []];
-  images.forEach((img, i) => {
-    columns[i % 2].push(img);
-  });
+  const tileWidth = (SCREEN_W - GUTTER * 2 - GUTTER) / COLUMNS;
+  const tileHeight = tileWidth / IMAGE_RATIO;
 
   return (
     <Screen backgroundColor="#000">
       <Header title="GALLERY" showBack onMenu={open} />
 
-      {showAdmin ? (
-        <Pressable style={styles.manageBtn} onPress={() => router.push('/admin/gallery' as Href)}>
-          <Ionicons name="images-outline" size={16} color={Colors.gold} />
-          <Text variant="label" tracking={2} color={Colors.gold}>
-            MANAGE GALLERY
-          </Text>
-        </Pressable>
-      ) : null}
+      <FlatList
+        data={galleryImages as readonly ImageSourcePropType[]}
+        keyExtractor={(_, i) => String(i)}
+        numColumns={COLUMNS}
+        contentContainerStyle={styles.grid}
+        columnWrapperStyle={{ gap: GUTTER }}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item, index }) => (
+          <Pressable
+            onPress={() => setViewerIndex(index)}
+            style={({ pressed }) => [
+              styles.tile,
+              { width: tileWidth, height: tileHeight },
+              pressed && styles.tilePressed,
+            ]}
+          >
+            <Image source={item} style={styles.tileImage} contentFit="cover" transition={150} />
+          </Pressable>
+        )}
+      />
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={Colors.gold} size="large" />
-        </View>
-      ) : images.length === 0 ? (
-        <View style={styles.center}>
-          <Text variant="heading" tracking={3} color={Colors.textMuted} center>
-            GALLERY COMING SOON
-          </Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={refresh}
-              tintColor={Colors.gold}
-              colors={[Colors.gold]}
-            />
-          }
-        >
-          <View style={styles.grid}>
-            {columns.map((column, colIndex) => (
-              <View key={colIndex} style={styles.column}>
-                {column.map((item) => (
-                  <View key={item.id} style={styles.card}>
-                    <Image
-                      source={{ uri: item.image_url }}
-                      style={styles.image}
-                      contentFit="cover"
-                      transition={250}
-                    />
-                    {item.caption ? (
-                      <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.8)']}
-                        style={styles.captionWrap}
-                      >
-                        <Text
-                          variant="caption"
-                          tracking={1}
-                          color={Colors.gold}
-                          numberOfLines={2}
-                        >
-                          {item.caption}
-                        </Text>
-                      </LinearGradient>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-            ))}
-          </View>
-        </ScrollView>
-      )}
+      {/* Full-screen swipe viewer */}
+      <Modal
+        visible={viewerIndex !== null}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={() => setViewerIndex(null)}
+        statusBarTranslucent
+      >
+        <FullscreenViewer
+          startIndex={viewerIndex ?? 0}
+          onClose={() => setViewerIndex(null)}
+        />
+      </Modal>
     </Screen>
   );
 }
 
+function FullscreenViewer({ startIndex, onClose }: { startIndex: number; onClose: () => void }) {
+  const [current, setCurrent] = useState(startIndex);
+  const listRef = useRef<FlatList>(null);
+
+  return (
+    <View style={styles.viewer}>
+      <FlatList
+        ref={listRef}
+        data={galleryImages as readonly ImageSourcePropType[]}
+        keyExtractor={(_, i) => String(i)}
+        horizontal
+        pagingEnabled
+        initialScrollIndex={startIndex}
+        getItemLayout={(_, i) => ({ length: SCREEN_W, offset: SCREEN_W * i, index: i })}
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) =>
+          setCurrent(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W))
+        }
+        renderItem={({ item }) => (
+          <View style={styles.page}>
+            <Image source={item} style={styles.fullImage} contentFit="contain" />
+          </View>
+        )}
+      />
+
+      <SafeAreaView style={styles.viewerOverlay} pointerEvents="box-none" edges={['top', 'bottom']}>
+        <View style={styles.viewerTop}>
+          <Pressable onPress={onClose} hitSlop={14} style={styles.closeBtn}>
+            <Ionicons name="close" size={24} color={Colors.white} />
+          </Pressable>
+        </View>
+        <View style={styles.viewerBottom}>
+          <Text variant="caption" tracking={2} color={Colors.white}>
+            {current + 1} / {galleryImages.length}
+          </Text>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  manageBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.goldBorder,
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    padding: GUTTER,
-  },
-  grid: {
-    flexDirection: 'row',
-    gap: GUTTER,
-  },
-  column: {
-    flex: 1,
-    gap: GUTTER,
-  },
-  card: {
-    width: COLUMN_WIDTH,
+  grid: { padding: GUTTER, gap: GUTTER },
+  tile: {
     borderRadius: Radius.md,
     overflow: 'hidden',
     backgroundColor: Colors.surface,
   },
-  image: {
-    width: '100%',
-    aspectRatio: 1,
+  tilePressed: { opacity: 0.85 },
+  tileImage: { width: '100%', height: '100%' },
+
+  viewer: { flex: 1, backgroundColor: '#000' },
+  page: { width: SCREEN_W, height: SCREEN_H, alignItems: 'center', justifyContent: 'center' },
+  fullImage: { width: SCREEN_W, height: SCREEN_H },
+  viewerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between' },
+  viewerTop: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
+  closeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  captionWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
+  viewerBottom: { alignItems: 'center', paddingBottom: Spacing.lg },
 });
