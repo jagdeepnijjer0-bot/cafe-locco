@@ -1,25 +1,29 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Text } from '@/components/ui/Text';
 import { useAppMenu } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
-import { Spacing, Radius } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 
 // Existing Cafe Locco assets (from the genuine Figma export)
-const heroImage = require('@/assets/images/figma-ecd2c95a.png');
-const midImage = require('@/assets/images/figma-5cc577b4.png');
+const imageOne = require('@/assets/images/figma-ecd2c95a.png');
+const imageTwo = require('@/assets/images/figma-5cc577b4.png');
 
-const INTRO_PARAGRAPHS = [
-  'At Café Locco, our greatest passion lies in delivering a refined dining experience that still feels like home. It all started with a shared love of great food and a dream to create a space where people could come together to enjoy it.',
-  'From our thoughtfully curated menu to our warm, welcoming atmosphere, every aspect of Café Locco has been shaped with care to ensure that each visit is unforgettable.',
-];
+const INTRO =
+  'AT CAFÉ LOCCO, OUR GREATEST PASSION LIES IN DELIVERING A REFINED DINING EXPERIENCE THAT STILL FEELS LIKE HOME. IT ALL STARTED WITH A SHARED LOVE OF GREAT FOOD AND A DREAM TO CREATE A SPACE WHERE PEOPLE COULD COME TOGETHER TO ENJOY IT. FROM OUR THOUGHTFULLY CURATED MENU TO OUR WARM, WELCOMING ATMOSPHERE, EVERY ASPECT OF CAFÉ LOCCO HAS BEEN SHAPED WITH CARE TO ENSURE THAT EACH VISIT IS UNFORGETTABLE.';
 
+const VISION =
+  'CAFÉ LOCCO LEADING THE WAY IN CULINARY INNOVATION, CONTINUALLY EVOLVING TO OFFER OUTSTANDING FLAVOURS WHILE SERVING AS A PLACE WHERE GENUINE CONNECTIONS AND MEMORIES ARE MADE.';
+
+const MISSION =
+  'IS TO DELIGHT GUESTS WITH EXCEPTIONAL FOOD AND HEARTFELT HOSPITALITY, CREATING A SENSE OF COMMUNITY THAT BRINGS PEOPLE CLOSER TOGETHER.';
+
+/** Our Story — matches the cafelocco.com page: uppercase letter-spaced copy,
+ *  full-width photos between sections, no cards. */
 export default function AboutScreen() {
   const { open } = useAppMenu();
 
@@ -27,94 +31,77 @@ export default function AboutScreen() {
     <Screen scroll contentStyle={styles.content}>
       <Header title="OUR STORY" showBack onMenu={open} />
 
-      <View style={styles.hero}>
-        <Image source={heroImage} style={styles.heroImage} contentFit="cover" />
+      <View style={styles.headingWrap}>
+        <Text style={styles.pageTitle}>OUR STORY</Text>
+        <View style={styles.rule} />
+        <Text style={styles.tagline}>A REFINED DINING EXPERIENCE THAT STILL FEELS LIKE HOME.</Text>
       </View>
 
-      <SectionHeader
-        title="OUR STORY"
-        subtitle="A refined dining experience that still feels like home."
-      />
+      <Text style={styles.body}>{INTRO}</Text>
 
-      {INTRO_PARAGRAPHS.map((paragraph) => (
-        <View key={paragraph} style={styles.card}>
-          <Text variant="body" center style={styles.cardText}>
-            {paragraph}
-          </Text>
-        </View>
-      ))}
+      <Image source={imageOne} style={styles.photo} contentFit="cover" />
 
-      <View style={styles.midImageWrap}>
-        <Image source={midImage} style={styles.heroImage} contentFit="cover" />
-      </View>
+      <Text style={styles.body}>
+        <Text style={styles.lead}>WE ENVISION </Text>
+        {VISION}
+      </Text>
 
-      <View style={styles.card}>
-        <View style={styles.iconBadge}>
-          <Ionicons name="heart-outline" size={24} color={Colors.gold} />
-        </View>
-        <Text variant="heading" center tracking={3} style={styles.cardHeading}>
-          OUR MISSION
-        </Text>
-        <Text variant="body" center style={styles.cardText}>
-          To delight guests with exceptional food and heartfelt hospitality, creating a sense of
-          community that brings people closer together.
-        </Text>
-      </View>
+      <Image source={imageTwo} style={styles.photo} contentFit="cover" />
 
-      <View style={styles.card}>
-        <View style={styles.iconBadge}>
-          <Ionicons name="sparkles-outline" size={22} color={Colors.gold} />
-        </View>
-        <Text variant="heading" center tracking={3} style={styles.cardHeading}>
-          OUR VISION
-        </Text>
-        <Text variant="body" center style={styles.cardText}>
-          Café Locco leading the way in culinary innovation, continually evolving to offer
-          outstanding flavours while serving as a place where genuine connections and memories are
-          made.
-        </Text>
-      </View>
+      <Text style={styles.body}>
+        <Text style={styles.lead}>OUR MISSION </Text>
+        {MISSION}
+      </Text>
+
+      <Text style={styles.footer}>cafelocco.com</Text>
     </Screen>
   );
 }
 
+const H_PAD = Spacing.lg;
+
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
-  hero: {
-    width: '100%',
-    height: 220,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    marginVertical: Spacing.lg,
+  content: { paddingBottom: Spacing.xxl },
+  headingWrap: { alignItems: 'center', marginTop: Spacing.xl, marginBottom: Spacing.lg, paddingHorizontal: H_PAD },
+  pageTitle: {
+    fontFamily: Fonts.family,
+    fontWeight: '700',
+    fontSize: 16,
+    letterSpacing: 4,
+    color: Colors.textPrimary,
+    textAlign: 'center',
   },
-  midImageWrap: {
-    width: '100%',
-    height: 200,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    marginBottom: Spacing.md,
+  rule: { width: 44, height: 1.5, backgroundColor: Colors.gold, marginTop: 12, marginBottom: 16 },
+  tagline: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 12.5,
+    letterSpacing: 1.5,
+    lineHeight: 20,
+    color: Colors.textSecondary,
+    textAlign: 'center',
   },
-  heroImage: { width: '100%', height: '100%' },
-  card: {
-    borderWidth: 1,
-    borderColor: Colors.goldBorder,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surface,
-    padding: Spacing.lg,
-    marginBottom: Spacing.md,
+  body: {
+    fontFamily: Fonts.family,
+    fontWeight: '300',
+    fontSize: 13,
+    letterSpacing: 1.4,
+    lineHeight: 24,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: H_PAD,
+    marginVertical: Spacing.xl,
   },
-  // larger, more readable body text inside cards
-  cardText: { fontSize: 16, lineHeight: 26 },
-  cardHeading: { marginBottom: Spacing.sm },
-  iconBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.goldBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
+  lead: { fontWeight: '700', color: Colors.textPrimary },
+  // full-width edge-to-edge photos, like the website
+  photo: { width: '100%', height: 240 },
+  footer: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 12,
+    letterSpacing: 1,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginTop: Spacing.lg,
   },
 });
