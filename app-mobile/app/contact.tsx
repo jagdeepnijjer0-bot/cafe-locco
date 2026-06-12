@@ -9,6 +9,7 @@ import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAppMenu } from '@/components/AppMenu';
+import { submitContactMessage } from '@/lib/submissions';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/theme';
 
@@ -72,9 +73,8 @@ export default function ContactScreen() {
     if (Object.keys(nextErrors).length > 0) return;
 
     setSubmitting(true);
-    // No backend/contact service exists yet — acknowledge locally.
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await submitContactMessage({ name: name.trim(), email: email.trim(), message: message.trim() });
       setName('');
       setEmail('');
       setMessage('');
@@ -82,7 +82,12 @@ export default function ContactScreen() {
         'Message Sent',
         'Thank you for reaching out to Café Locco. We will be in touch shortly.',
       );
-    }, 800);
+    } catch (e) {
+      const m = e instanceof Error ? e.message : 'Please try again.';
+      Alert.alert('Message not sent', `We could not send your message.\n\n${m}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

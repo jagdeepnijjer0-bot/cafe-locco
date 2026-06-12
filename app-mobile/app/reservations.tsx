@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -12,6 +12,7 @@ import { useAppMenu } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Fonts, Spacing, Radius } from '@/constants/theme';
 import type { ReservationInput } from '@/lib/types';
+import { submitReservation } from '@/lib/submissions';
 
 const TIME_SLOTS = [
   '12:00',
@@ -86,6 +87,7 @@ export default function ReservationsScreen() {
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const tap = () => {
     Haptics.selectionAsync().catch(() => {});
@@ -96,7 +98,7 @@ export default function ReservationsScreen() {
     setGuests((g) => Math.min(MAX_GUESTS, Math.max(MIN_GUESTS, g + delta)));
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!date) return setError('Please select a date.');
     if (!time) return setError('Please select a time.');
     if (!name.trim()) return setError('Please enter your full name.');
@@ -113,6 +115,17 @@ export default function ReservationsScreen() {
       guests,
       notes: notes.trim() || undefined,
     };
+
+    setSubmitting(true);
+    try {
+      await submitReservation(reservation);
+    } catch (e) {
+      setSubmitting(false);
+      const message = e instanceof Error ? e.message : 'Please try again.';
+      Alert.alert('Reservation failed', `We could not save your booking.\n\n${message}`);
+      return;
+    }
+    setSubmitting(false);
 
     router.push({
       pathname: '/reservation-confirmation',
@@ -306,7 +319,7 @@ export default function ReservationsScreen() {
           </Text>
         ) : null}
 
-        <Button label="Confirm Reservation" onPress={handleConfirm} style={styles.confirmBtn} />
+        <Button label="Confirm Reservation" onPress={handleConfirm} loading={submitting} style={styles.confirmBtn} />
       </View>
     </Screen>
   );
