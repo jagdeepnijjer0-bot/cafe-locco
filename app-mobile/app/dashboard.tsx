@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { format, parseISO } from 'date-fns';
 
 import { Screen } from '@/components/ui/Screen';
@@ -179,6 +179,17 @@ export default function DashboardScreen() {
           />
         </>
       )}
+
+      {/* Account settings — account deletion (Apple guideline 5.1.1(v)) */}
+      <Pressable
+        onPress={() => router.push('/delete-account' as Href)}
+        hitSlop={8}
+        style={styles.deleteLink}
+      >
+        <Text variant="caption" tracking={2} color={Colors.error}>
+          DELETE ACCOUNT
+        </Text>
+      </Pressable>
     </Screen>
   );
 }
@@ -266,4 +277,5 @@ const styles = StyleSheet.create({
   claimBody: { maxWidth: 320, marginBottom: Spacing.lg },
   claimButton: { alignSelf: 'stretch' },
   manageButton: { marginTop: Spacing.xs },
+  deleteLink: { alignSelf: 'center', marginTop: Spacing.xxl, paddingVertical: Spacing.sm },
 });
