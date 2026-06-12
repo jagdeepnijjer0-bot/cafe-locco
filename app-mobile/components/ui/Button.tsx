@@ -17,7 +17,8 @@ interface ButtonProps {
   style?: ViewStyle;
 }
 
-/** Pill button — genuine Figma style: gold/outlined, uppercase, letter-spaced. */
+/** Pill button — muted premium gold: gold outline + gold label on black
+ *  (no bright solid fill), matching the toned-down website branding. */
 export function Button({
   label,
   onPress,
@@ -51,13 +52,13 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? Colors.background : Colors.gold} />
+        <ActivityIndicator color={Colors.gold} />
       ) : (
         <View style={styles.row}>
           <Text
             variant="label"
             tracking={2}
-            color={variant === 'primary' ? Colors.background : Colors.textPrimary}
+            color={variant === 'ghost' ? Colors.textSecondary : Colors.gold}
           >
             {label.toUpperCase()}
           </Text>
@@ -76,10 +77,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  primary: { backgroundColor: Colors.gold },
-  outline: { borderWidth: 1.5, borderColor: Colors.goldBorder, backgroundColor: 'transparent' },
+  // Primary CTA: muted gold outline (no bright fill).
+  primary: { borderWidth: 1.5, borderColor: Colors.gold, backgroundColor: 'transparent' },
+  outline: { borderWidth: 1, borderColor: Colors.goldBorder, backgroundColor: 'transparent' },
   ghost: { backgroundColor: 'transparent' },
   fullWidth: { alignSelf: 'stretch' },
-  pressed: { opacity: 0.8 },
+  pressed: { opacity: 0.6, backgroundColor: Colors.goldGlow },
   disabled: { opacity: 0.4 },
 });

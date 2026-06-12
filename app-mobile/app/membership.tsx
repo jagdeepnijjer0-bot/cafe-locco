@@ -15,7 +15,7 @@ import { createCheckoutSession } from '@/lib/stripe';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/theme';
 
-const PRICE_DISPLAY = process.env.EXPO_PUBLIC_MEMBERSHIP_PRICE_DISPLAY ?? '£24.00 / month';
+const PRICE_DISPLAY = process.env.EXPO_PUBLIC_MEMBERSHIP_PRICE_DISPLAY ?? '£19.99 / month';
 const PREMIUM_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '';
 
 const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [

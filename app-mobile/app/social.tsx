@@ -32,9 +32,9 @@ const SOCIALS: Social[] = [
   },
   {
     name: 'FACEBOOK',
-    handle: '@cafelocco',
+    handle: 'Cafe Locco',
     icon: 'logo-facebook',
-    url: 'https://facebook.com/cafelocco',
+    url: 'https://www.facebook.com/share/1GzuMhM7k9/?mibextid=wwXIfr',
   },
 ];
 

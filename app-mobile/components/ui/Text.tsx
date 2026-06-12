@@ -36,11 +36,12 @@ export function Text({
   );
 }
 
+// All Helvetica Neue (matches cafelocco.com). Headings are uppercase + letter-spaced.
 const styles = StyleSheet.create({
-  display: { fontFamily: Fonts.serifBold, fontSize: 40, color: Colors.textPrimary, letterSpacing: 1 },
-  title: { fontFamily: Fonts.serif, fontSize: 28, color: Colors.textPrimary, letterSpacing: 1 },
-  heading: { fontFamily: Fonts.bodySemiBold, fontSize: 14, color: Colors.textPrimary, letterSpacing: 3 },
-  body: { fontFamily: Fonts.body, fontSize: 15, color: Colors.textSecondary, lineHeight: 22 },
-  label: { fontFamily: Fonts.bodyMedium, fontSize: 13, color: Colors.textPrimary, letterSpacing: 2 },
-  caption: { fontFamily: Fonts.body, fontSize: 12, color: Colors.textMuted, letterSpacing: 1 },
+  display: { fontFamily: Fonts.family, fontWeight: '700', fontSize: 26, color: Colors.textPrimary, letterSpacing: 2 },
+  title: { fontFamily: Fonts.family, fontWeight: '600', fontSize: 20, color: Colors.textPrimary, letterSpacing: 1.5 },
+  heading: { fontFamily: Fonts.family, fontWeight: '600', fontSize: 14, color: Colors.textPrimary, letterSpacing: 3 },
+  body: { fontFamily: Fonts.family, fontWeight: '400', fontSize: 15, color: Colors.textSecondary, lineHeight: 23 },
+  label: { fontFamily: Fonts.family, fontWeight: '500', fontSize: 13, color: Colors.textPrimary, letterSpacing: 2 },
+  caption: { fontFamily: Fonts.family, fontWeight: '400', fontSize: 12, color: Colors.textMuted, letterSpacing: 1 },
 });

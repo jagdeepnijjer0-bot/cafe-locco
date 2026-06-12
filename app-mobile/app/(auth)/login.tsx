@@ -61,6 +61,12 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
+        {router.canGoBack() && (
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+          </Pressable>
+        )}
+
         <View style={styles.logoWrap}>
           <Image source={logo} style={styles.logo} contentFit="contain" />
         </View>
@@ -145,7 +151,8 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.xl },
   flex: { flex: 1 },
-  logoWrap: { alignItems: 'center', marginTop: Spacing.lg, marginBottom: Spacing.xl },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginLeft: -8 },
+  logoWrap: { alignItems: 'center', marginTop: Spacing.sm, marginBottom: Spacing.xl },
   logo: { width: 120, height: 120 },
   header: { marginBottom: Spacing.xl },
   subtitle: { marginTop: Spacing.sm },

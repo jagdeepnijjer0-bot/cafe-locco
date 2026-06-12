@@ -103,9 +103,6 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
                 )}
 
                 <View style={styles.section}>
-                  <Text variant="caption" tracking={3} style={styles.sectionTitle}>
-                    OTHER
-                  </Text>
                   {otherItems.map((item) => (
                     <NavRow key={item.label} label={item.label} onPress={() => navigate(item.href)} />
                   ))}

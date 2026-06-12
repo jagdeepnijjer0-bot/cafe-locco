@@ -6,13 +6,18 @@ import {
   RefreshControl,
   ActivityIndicator,
   Dimensions,
+  Pressable,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter, type Href } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
 import { useAppMenu } from '@/components/AppMenu';
+import { useAuthContext } from '@/components/AuthProvider';
+import { isAdminEmail } from '@/lib/galleryAdmin';
 import { useGallery } from '@/hooks/useGallery';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/theme';
@@ -25,7 +30,10 @@ const COLUMN_WIDTH = (width - GUTTER * 2 - GUTTER) / 2;
 /** Gallery — dark-theme 2-column photo grid backed by the gallery hook. */
 export default function GalleryScreen() {
   const { open } = useAppMenu();
+  const router = useRouter();
+  const { user, isLoggedIn } = useAuthContext();
   const { images, loading, refreshing, refresh } = useGallery();
+  const showAdmin = isLoggedIn && isAdminEmail(user?.email);
 
   // Split images into two balanced columns for a masonry-style layout.
   const columns: GalleryImage[][] = [[], []];
@@ -36,6 +44,15 @@ export default function GalleryScreen() {
   return (
     <Screen backgroundColor="#000">
       <Header title="GALLERY" showBack onMenu={open} />
+
+      {showAdmin ? (
+        <Pressable style={styles.manageBtn} onPress={() => router.push('/admin/gallery' as Href)}>
+          <Ionicons name="images-outline" size={16} color={Colors.gold} />
+          <Text variant="label" tracking={2} color={Colors.gold}>
+            MANAGE GALLERY
+          </Text>
+        </Pressable>
+      ) : null}
 
       {loading ? (
         <View style={styles.center}>
@@ -99,6 +116,18 @@ export default function GalleryScreen() {
 }
 
 const styles = StyleSheet.create({
+  manageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: Colors.goldBorder,
+  },
   center: {
     flex: 1,
     alignItems: 'center',
