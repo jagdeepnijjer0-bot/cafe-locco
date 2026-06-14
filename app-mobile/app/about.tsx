@@ -7,7 +7,7 @@ import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
 import { useAppMenu } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
-import { Fonts, Spacing } from '@/constants/theme';
+import { Fonts, Spacing, Radius } from '@/constants/theme';
 
 // Existing Cafe Locco assets (from the genuine Figma export)
 const imageOne = require('@/assets/images/figma-ecd2c95a.png');
@@ -22,8 +22,8 @@ const VISION =
 const MISSION =
   'IS TO DELIGHT GUESTS WITH EXCEPTIONAL FOOD AND HEARTFELT HOSPITALITY, CREATING A SENSE OF COMMUNITY THAT BRINGS PEOPLE CLOSER TOGETHER.';
 
-/** Our Story — matches the cafelocco.com page: uppercase letter-spaced copy,
- *  full-width photos between sections, no cards. */
+/** Our Story — dark theme with a gold accent line under the heading and
+ *  gold-bordered content boxes. Text content unchanged. */
 export default function AboutScreen() {
   const { open } = useAppMenu();
 
@@ -37,21 +37,27 @@ export default function AboutScreen() {
         <Text style={styles.tagline}>A REFINED DINING EXPERIENCE THAT STILL FEELS LIKE HOME.</Text>
       </View>
 
-      <Text style={styles.body}>{INTRO}</Text>
+      <View style={styles.card}>
+        <Text style={styles.body}>{INTRO}</Text>
+      </View>
 
       <Image source={imageOne} style={styles.photo} contentFit="cover" />
 
-      <Text style={styles.body}>
-        <Text style={styles.lead}>WE ENVISION </Text>
-        {VISION}
-      </Text>
+      <View style={styles.card}>
+        <Text style={styles.body}>
+          <Text style={styles.lead}>WE ENVISION </Text>
+          {VISION}
+        </Text>
+      </View>
 
       <Image source={imageTwo} style={styles.photo} contentFit="cover" />
 
-      <Text style={styles.body}>
-        <Text style={styles.lead}>OUR MISSION </Text>
-        {MISSION}
-      </Text>
+      <View style={styles.card}>
+        <Text style={styles.body}>
+          <Text style={styles.lead}>OUR MISSION </Text>
+          {MISSION}
+        </Text>
+      </View>
 
       <Text style={styles.footer}>cafelocco.com</Text>
     </Screen>
@@ -61,8 +67,8 @@ export default function AboutScreen() {
 const H_PAD = Spacing.lg;
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: Spacing.xxl },
-  headingWrap: { alignItems: 'center', marginTop: Spacing.xl, marginBottom: Spacing.lg, paddingHorizontal: H_PAD },
+  content: { paddingHorizontal: H_PAD, paddingBottom: Spacing.xxl },
+  headingWrap: { alignItems: 'center', marginTop: Spacing.xl, marginBottom: Spacing.lg },
   pageTitle: {
     fontFamily: Fonts.family,
     fontWeight: '700',
@@ -81,6 +87,15 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textAlign: 'center',
   },
+  // gold-bordered content box
+  card: {
+    borderWidth: 1,
+    borderColor: Colors.goldBorder,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surface,
+    padding: Spacing.lg,
+    marginVertical: Spacing.md,
+  },
   body: {
     fontFamily: Fonts.family,
     fontWeight: '300',
@@ -89,12 +104,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     color: Colors.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: H_PAD,
-    marginVertical: Spacing.xl,
   },
-  lead: { fontWeight: '700', color: Colors.textPrimary },
-  // full-width edge-to-edge photos, like the website
-  photo: { width: '100%', height: 240 },
+  lead: { fontWeight: '700', color: Colors.gold },
+  photo: { width: '100%', height: 220, borderRadius: Radius.lg, marginVertical: Spacing.md },
   footer: {
     fontFamily: Fonts.family,
     fontWeight: '400',

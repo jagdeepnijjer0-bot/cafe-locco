@@ -18,7 +18,8 @@ const PRICE_RAW = process.env.EXPO_PUBLIC_MEMBERSHIP_PRICE_DISPLAY ?? '£19.99 /
 const PRICE_AMOUNT = PRICE_RAW.split('/')[0].trim(); // "£19.99"
 const PREMIUM_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '';
 
-const BORDER = 'rgba(255,255,255,0.2)';
+// Gold-bordered content boxes (matches the Our Story theme).
+const BORDER = Colors.goldBorder;
 
 export default function MembershipScreen() {
   const { open } = useAppMenu();
@@ -68,6 +69,7 @@ export default function MembershipScreen() {
 
       {/* Benefits */}
       <Text style={styles.benefitsTitle}>MEMBERSHIP BENEFITS</Text>
+      <View style={styles.rule} />
 
       <View style={styles.benefitCard}>
         <View style={styles.benefitIcon}>
@@ -174,8 +176,10 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     color: Colors.white,
     textAlign: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.sm,
   },
+  // gold accent line under the heading (matches Our Story)
+  rule: { width: 44, height: 1.5, backgroundColor: Colors.gold, alignSelf: 'center', marginBottom: Spacing.lg },
   benefitCard: {
     borderWidth: 1,
     borderColor: BORDER,
