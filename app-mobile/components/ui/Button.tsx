@@ -77,11 +77,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  // Primary CTA: muted gold outline (no bright fill).
-  primary: { borderWidth: 1.5, borderColor: Colors.gold, backgroundColor: 'transparent' },
+  // Primary CTA: black/dark fill with a gold outline + gold label (no gold fill).
+  primary: { backgroundColor: '#0E0E0E', borderWidth: 1.5, borderColor: Colors.gold },
   outline: { borderWidth: 1, borderColor: Colors.goldBorder, backgroundColor: 'transparent' },
   ghost: { backgroundColor: 'transparent' },
   fullWidth: { alignSelf: 'stretch' },
-  pressed: { opacity: 0.6, backgroundColor: Colors.goldGlow },
+  pressed: { opacity: 0.7, backgroundColor: Colors.surfaceElevated },
   disabled: { opacity: 0.4 },
 });
