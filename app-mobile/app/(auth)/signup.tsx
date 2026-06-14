@@ -18,7 +18,7 @@ import { useAuthContext } from '@/components/AuthProvider';
 import { Colors } from '@/constants/colors';
 import { Spacing } from '@/constants/theme';
 
-const logo = require('@/assets/images/logo.png');
+const logo = require('@/assets/images/logo-transparent.png');
 
 const EMAIL_RE = /\S+@\S+\.\S+/;
 
