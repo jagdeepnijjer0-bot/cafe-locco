@@ -157,8 +157,11 @@ const styles = StyleSheet.create({
     fontFamily: FONT,
     fontWeight: '600',
     fontSize: 40,
+    lineHeight: 52,
     letterSpacing: 2,
     color: Colors.white,
+    textAlign: 'center',
+    paddingTop: 4,
     marginBottom: 6,
   },
   pricePeriod: {

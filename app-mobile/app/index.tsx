@@ -6,7 +6,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Colors } from '@/constants/colors';
 import { useAppMenu } from '@/components/AppMenu';
 
-const logo = require('@/assets/images/logo.png');
+const logo = require('@/assets/images/logo-transparent.png');
 
 /** Home — genuine Figma: black screen, centered Cafe Locco logo, hamburger menu. */
 export default function HomeScreen() {

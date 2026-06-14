@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
@@ -81,6 +81,10 @@ export default function GalleryScreen() {
 function FullscreenViewer({ startIndex, onClose }: { startIndex: number; onClose: () => void }) {
   const [current, setCurrent] = useState(startIndex);
   const listRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
+  // Keep the image within the safe area so it never sits under the status bar
+  // (top) or the home indicator (bottom).
+  const imageHeight = SCREEN_H - insets.top - insets.bottom;
 
   return (
     <View style={styles.viewer}>
@@ -97,8 +101,8 @@ function FullscreenViewer({ startIndex, onClose }: { startIndex: number; onClose
           setCurrent(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W))
         }
         renderItem={({ item }) => (
-          <View style={styles.page}>
-            <Image source={item} style={styles.fullImage} contentFit="contain" />
+          <View style={[styles.page, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            <Image source={item} style={{ width: SCREEN_W, height: imageHeight }} contentFit="contain" />
           </View>
         )}
       />
