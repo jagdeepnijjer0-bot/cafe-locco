@@ -99,7 +99,7 @@ export default function MembershipScreen() {
         style={({ pressed }) => [styles.ctaPrimary, pressed && styles.pressed]}
       >
         {loading ? (
-          <ActivityIndicator color={Colors.white} />
+          <ActivityIndicator color={Colors.gold} />
         ) : (
           <Text style={styles.ctaPrimaryText}>SIGN UP AND SUBSCRIBE</Text>
         )}
@@ -213,9 +213,11 @@ const styles = StyleSheet.create({
   ctaPrimary: {
     height: 56,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceElevated, // dark, not gold
-    borderWidth: 1,
-    borderColor: BORDER,
+    // Match the shared Button primary (Send Message / Confirm Reservation):
+    // dark fill, 1.5 gold outline, gold label.
+    backgroundColor: '#0E0E0E',
+    borderWidth: 1.5,
+    borderColor: Colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.xl,
@@ -225,7 +227,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
     letterSpacing: 2,
-    color: Colors.white,
+    color: Colors.gold,
   },
   ctaSecondary: {
     height: 52,
