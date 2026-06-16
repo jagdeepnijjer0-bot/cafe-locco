@@ -311,15 +311,15 @@ export default function ReservationsScreen() {
             numberOfLines={4}
             style={styles.notes}
           />
+
+          {error ? (
+            <Text variant="caption" center color={Colors.error} style={styles.errorText}>
+              {error}
+            </Text>
+          ) : null}
+
+          <Button label="Confirm Reservation" onPress={handleConfirm} loading={submitting} style={styles.confirmBtn} />
         </View>
-
-        {error ? (
-          <Text variant="caption" center color={Colors.error} style={styles.errorText}>
-            {error}
-          </Text>
-        ) : null}
-
-        <Button label="Confirm Reservation" onPress={handleConfirm} loading={submitting} style={styles.confirmBtn} />
       </View>
     </Screen>
   );
