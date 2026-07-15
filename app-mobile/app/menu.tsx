@@ -77,7 +77,11 @@ export default function MenuScreen() {
         ) : null}
 
         {active.items.map((item) => (
-          <View key={item.name} style={styles.item}>
+          <React.Fragment key={item.name}>
+            {item.subheading ? (
+              <Text style={styles.subheading}>{item.subheading}</Text>
+            ) : null}
+            <View style={styles.item}>
             <View style={styles.itemTop}>
               <Text variant="heading" tracking={1.5} color={Colors.white} style={styles.itemName}>
                 {item.name}
@@ -95,7 +99,8 @@ export default function MenuScreen() {
               </Text>
             ) : null}
             <DietBadges diet={item.diet} />
-          </View>
+            </View>
+          </React.Fragment>
         ))}
       </ScrollView>
     </Screen>
@@ -115,6 +120,15 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.xxl },
   catNote: { marginBottom: Spacing.lg },
 
+  subheading: {
+    fontFamily: Fonts.family,
+    fontWeight: '700',
+    fontSize: 15,
+    letterSpacing: 2.5,
+    color: Colors.white,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xs,
+  },
   item: { borderBottomWidth: 1, borderBottomColor: Colors.borderSubtle, paddingVertical: Spacing.lg },
   itemTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: Spacing.md },
   itemName: { flex: 1 },

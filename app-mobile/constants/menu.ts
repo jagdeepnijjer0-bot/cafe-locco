@@ -10,6 +10,7 @@ export interface MenuItem {
   price: string; // numeric string, shown with a £ prefix
   diet?: Diet[];
   note?: string; // e.g. "Served only iced", "+£2.50 chicken"
+  subheading?: string; // bold group header rendered ABOVE this item
 }
 
 export interface MenuCategory {
@@ -150,15 +151,13 @@ export const menu: MenuCategory[] = [
     icon: 'cafe-outline',
     note: 'Alternative milks: Oat, Almond, Coconut, Soya available upon request. Additional syrups: Salted Caramel, Caramel, Hazelnut, Vanilla, Spiced Pumpkin (+£1). Make it iced and add whipped cream or cold foam (+£1).',
     items: [
-      // BREW BAR
-      { name: 'English Breakfast', price: '4' },
+      { name: 'English Breakfast', price: '4', subheading: 'BREW BAR' },
       { name: 'Moroccan Mint Tea', price: '4' },
       { name: 'Karak Chai', price: '5.49' },
       { name: 'Kashmiri Pink Tea', price: '5.49' },
       { name: 'Pomegranate Green Tea', price: '4' },
       { name: 'Spiced Apple Cinnamon', price: '4' },
-      // HOUSE COFFEE
-      { name: 'Flat White', price: '4' },
+      { name: 'Flat White', price: '4', subheading: 'HOUSE COFFEE' },
       { name: 'Caffe Latte', price: '4' },
       { name: 'Cappuccino', price: '4' },
       { name: 'Mocha (white or milk chocolate)', price: '5' },
