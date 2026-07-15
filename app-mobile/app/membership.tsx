@@ -3,7 +3,7 @@ import { View, StyleSheet, Alert, Pressable, ActivityIndicator } from 'react-nat
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
@@ -21,7 +21,14 @@ const PREMIUM_PRICE_ID = process.env.EXPO_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '';
 // Gold-bordered content boxes (matches the Our Story theme).
 const BORDER = Colors.goldBorder;
 
+// Membership/Subscription is hidden for launch. The screen is kept intact
+// below (MembershipScreenContent) so it can be easily restored later: swap the
+// default export back to MembershipScreenContent and remove this redirect.
 export default function MembershipScreen() {
+  return <Redirect href="/" />;
+}
+
+export function MembershipScreenContent() {
   const { open } = useAppMenu();
   const router = useRouter();
   const { isLoggedIn } = useAuthContext();

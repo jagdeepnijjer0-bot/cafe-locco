@@ -67,9 +67,10 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     { icon: 'cafe-outline', label: 'MENU', href: '/menu' },
     { icon: 'calendar-outline', label: 'RESERVATIONS', href: '/reservations' },
     { icon: 'images-outline', label: 'GALLERY', href: '/gallery' },
-    ...(!isLoggedIn
-      ? [{ icon: 'card-outline' as const, label: 'MEMBERSHIP', href: '/membership' as Href }]
-      : []),
+    // MEMBERSHIP hidden for launch — restore by uncommenting the block below.
+    // ...(!isLoggedIn
+    //   ? [{ icon: 'card-outline' as const, label: 'MEMBERSHIP', href: '/membership' as Href }]
+    //   : []),
     { icon: 'mail-outline', label: 'CONTACT US', href: '/contact' },
     { icon: 'share-social-outline', label: 'SOCIALS', href: '/social' },
   ];
