@@ -14,18 +14,22 @@ import { Fonts, Spacing, Radius } from '@/constants/theme';
 import type { ReservationInput } from '@/lib/types';
 import { submitReservation } from '@/lib/submissions';
 
-const TIME_SLOTS = [
-  '12:00',
-  '13:00',
-  '14:00',
-  '15:00',
-  '16:00',
-  '17:00',
-  '18:00',
-  '19:00',
-  '20:00',
-  '21:00',
-];
+// Opening hours per weekday (0 = Sun … 6 = Sat), in minutes from midnight.
+// Reservation slots run every 30 minutes from opening until 30 minutes before
+// closing (the last bookable slot).
+//   Mon–Thu & Sun: 09:00–20:00  →  last slot 19:30
+//   Fri–Sat:       09:00–21:00  →  last slot 20:30
+const OPENING_HOURS: Record<number, { open: number; close: number }> = {
+  0: { open: 9 * 60, close: 20 * 60 }, // Sunday
+  1: { open: 9 * 60, close: 20 * 60 }, // Monday
+  2: { open: 9 * 60, close: 20 * 60 }, // Tuesday
+  3: { open: 9 * 60, close: 20 * 60 }, // Wednesday
+  4: { open: 9 * 60, close: 20 * 60 }, // Thursday
+  5: { open: 9 * 60, close: 21 * 60 }, // Friday
+  6: { open: 9 * 60, close: 21 * 60 }, // Saturday
+};
+const SLOT_INTERVAL = 30; // minutes between slots
+const LAST_SLOT_BEFORE_CLOSE = 30; // last slot is this many minutes before close
 
 const MIN_GUESTS = 1;
 const MAX_GUESTS = 20;
@@ -48,6 +52,28 @@ const MONTHS = [
 
 function pad(n: number) {
   return n < 10 ? `0${n}` : `${n}`;
+}
+
+function minutesToLabel(mins: number) {
+  return `${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`;
+}
+
+/** Weekday (0 = Sun … 6 = Sat) for a DD/MM/YYYY value. */
+function weekdayOfDate(value: string) {
+  const [dd, mm, yyyy] = value.split('/').map(Number);
+  return new Date(yyyy, mm - 1, dd).getDay();
+}
+
+/** All 30-minute slots for the given DD/MM/YYYY date, based on opening hours. */
+function slotsForDate(value: string): string[] {
+  const hours = OPENING_HOURS[weekdayOfDate(value)];
+  if (!hours) return []; // closed that day
+  const lastSlot = hours.close - LAST_SLOT_BEFORE_CLOSE;
+  const out: string[] = [];
+  for (let t = hours.open; t <= lastSlot; t += SLOT_INTERVAL) {
+    out.push(minutesToLabel(t));
+  }
+  return out;
 }
 
 interface DayChip {
@@ -98,13 +124,15 @@ export default function ReservationsScreen() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Only show times at least 1 hour ahead when the selected date is today.
-  // Future dates keep all slots.
+  // 30-minute slots for the selected date's opening hours. On today's date,
+  // only slots at least 1 hour ahead of now are shown; future dates keep all.
   const todayValue = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
   const availableTimes = useMemo(() => {
-    if (date !== todayValue) return TIME_SLOTS;
+    if (!date) return [];
+    const slots = slotsForDate(date);
+    if (date !== todayValue) return slots;
     const minMinutes = now.getHours() * 60 + now.getMinutes() + 60;
-    return TIME_SLOTS.filter((slot) => {
+    return slots.filter((slot) => {
       const [h, m] = slot.split(':').map(Number);
       return h * 60 + m >= minMinutes;
     });
@@ -235,9 +263,13 @@ export default function ReservationsScreen() {
           <Text variant="heading" center tracking={3} style={styles.cardTitle}>
             SELECT TIME
           </Text>
-          {availableTimes.length === 0 ? (
+          {!date ? (
             <Text variant="caption" center tracking={1} color={Colors.textMuted}>
-              No more times available today. Please select another date.
+              Please select a date first.
+            </Text>
+          ) : availableTimes.length === 0 ? (
+            <Text variant="caption" center tracking={1} color={Colors.textMuted}>
+              No more times available for this date. Please select another date.
             </Text>
           ) : (
             <ScrollView
