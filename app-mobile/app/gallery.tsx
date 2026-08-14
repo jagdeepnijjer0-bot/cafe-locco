@@ -1,20 +1,9 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Pressable,
-  Modal,
-  Dimensions,
-  ImageSourcePropType,
-} from 'react-native';
+import React from 'react';
+import { View, StyleSheet, FlatList, Dimensions, ImageSourcePropType } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
-import { Text } from '@/components/ui/Text';
-import { useAppMenu } from '@/components/AppMenu';
+import { useAppMenu, useReturnToMenuOnBack } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/theme';
 import { galleryImages } from '@/constants/galleryImages';
@@ -25,13 +14,13 @@ const COLUMNS = 2;
 // contentFit="cover" fills the cell without cropping anything important.
 const IMAGE_RATIO = 487 / 745;
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const { width: SCREEN_W } = Dimensions.get('window');
 
-/** Gallery — fixed 2-column grid of the 27 bundled images, with a
- *  full-screen left/right swipe viewer that preserves order 01 -> 27. */
+/** Gallery — fixed 2-column grid of the 27 bundled images. Display only:
+ *  photos are not tappable (no fullscreen viewer, no press feedback). */
 export default function GalleryScreen() {
   const { open } = useAppMenu();
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  useReturnToMenuOnBack();
 
   const tileWidth = (SCREEN_W - GUTTER * 2 - GUTTER) / COLUMNS;
   const tileHeight = tileWidth / IMAGE_RATIO;
@@ -47,79 +36,13 @@ export default function GalleryScreen() {
         contentContainerStyle={styles.grid}
         columnWrapperStyle={{ gap: GUTTER }}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <Pressable
-            onPress={() => setViewerIndex(index)}
-            style={({ pressed }) => [
-              styles.tile,
-              { width: tileWidth, height: tileHeight },
-              pressed && styles.tilePressed,
-            ]}
-          >
-            <Image source={item} style={styles.tileImage} contentFit="cover" transition={150} />
-          </Pressable>
-        )}
-      />
-
-      {/* Full-screen swipe viewer */}
-      <Modal
-        visible={viewerIndex !== null}
-        transparent={false}
-        animationType="fade"
-        onRequestClose={() => setViewerIndex(null)}
-        statusBarTranslucent
-      >
-        <FullscreenViewer
-          startIndex={viewerIndex ?? 0}
-          onClose={() => setViewerIndex(null)}
-        />
-      </Modal>
-    </Screen>
-  );
-}
-
-function FullscreenViewer({ startIndex, onClose }: { startIndex: number; onClose: () => void }) {
-  const [current, setCurrent] = useState(startIndex);
-  const listRef = useRef<FlatList>(null);
-  const insets = useSafeAreaInsets();
-  // Keep the image within the safe area so it never sits under the status bar
-  // (top) or the home indicator (bottom).
-  const imageHeight = SCREEN_H - insets.top - insets.bottom;
-
-  return (
-    <View style={styles.viewer}>
-      <FlatList
-        ref={listRef}
-        data={galleryImages as readonly ImageSourcePropType[]}
-        keyExtractor={(_, i) => String(i)}
-        horizontal
-        pagingEnabled
-        initialScrollIndex={startIndex}
-        getItemLayout={(_, i) => ({ length: SCREEN_W, offset: SCREEN_W * i, index: i })}
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) =>
-          setCurrent(Math.round(e.nativeEvent.contentOffset.x / SCREEN_W))
-        }
         renderItem={({ item }) => (
-          <View style={[styles.page, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-            <Image source={item} style={{ width: SCREEN_W, height: imageHeight }} contentFit="contain" />
+          <View style={[styles.tile, { width: tileWidth, height: tileHeight }]}>
+            <Image source={item} style={styles.tileImage} contentFit="cover" transition={150} />
           </View>
         )}
       />
-
-      <SafeAreaView style={styles.viewerOverlay} pointerEvents="box-none" edges={['top', 'bottom']}>
-        <View style={styles.viewerTop}>
-          <Pressable onPress={onClose} hitSlop={14} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color={Colors.white} />
-          </Pressable>
-        </View>
-        <View style={styles.viewerBottom}>
-          <Text variant="caption" tracking={2} color={Colors.white}>
-            {current + 1} / {galleryImages.length}
-          </Text>
-        </View>
-      </SafeAreaView>
-    </View>
+    </Screen>
   );
 }
 
@@ -130,23 +53,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: Colors.surface,
   },
-  tilePressed: { opacity: 0.85 },
   tileImage: { width: '100%', height: '100%' },
-
-  viewer: { flex: 1, backgroundColor: '#000' },
-  page: { width: SCREEN_W, height: SCREEN_H, alignItems: 'center', justifyContent: 'center' },
-  fullImage: { width: SCREEN_W, height: SCREEN_H },
-  viewerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between' },
-  viewerTop: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm },
-  closeBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewerBottom: { alignItems: 'center', paddingBottom: Spacing.lg },
 });

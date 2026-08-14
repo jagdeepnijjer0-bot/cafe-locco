@@ -41,14 +41,14 @@ function DetailRow({ icon, label, value }: DetailRowProps) {
   );
 }
 
-/** RESERVATION CONFIRMED — success state with generated confirmation number + summary. */
+/** REQUEST RECEIVED — post-submit state (request pending restaurant confirmation)
+ *  with a generated request reference + summary. */
 export default function ReservationConfirmationScreen() {
   const router = useRouter();
   const { open } = useAppMenu();
   const params = useLocalSearchParams();
 
   const name = firstParam(params.name);
-  const email = firstParam(params.email);
   const phone = firstParam(params.phone);
   const date = firstParam(params.date);
   const time = firstParam(params.time);
@@ -75,18 +75,16 @@ export default function ReservationConfirmationScreen() {
         </View>
 
         <Text variant="heading" center tracking={3} style={styles.title}>
-          RESERVATION CONFIRMED
+          REQUEST RECEIVED
         </Text>
         <Text variant="body" center color={Colors.textSecondary} style={styles.subtitle}>
-          We have sent a confirmation to{'\n'}
-          <Text variant="body" color={Colors.gold}>
-            {email || 'your email'}
-          </Text>
+          Thank you! Your reservation request has been received. The restaurant will be in touch to
+          confirm your booking.
         </Text>
 
         <View style={styles.confNumberCard}>
           <Text variant="caption" center tracking={1} color={Colors.textSecondary}>
-            CONFIRMATION NUMBER
+            REQUEST REFERENCE
           </Text>
           <Text variant="title" center color={Colors.white} style={styles.confNumber}>
             {confirmationNumber}
@@ -125,8 +123,8 @@ export default function ReservationConfirmationScreen() {
 
         <View style={styles.infoCard}>
           <Text variant="body" center color={Colors.textSecondary} style={styles.infoText}>
-            Please arrive 10 minutes before your reservation time. To cancel or modify your booking,
-            contact us at least 24 hours in advance on 024 7704 9561.
+            This is a request, not a confirmed booking. The restaurant will contact you shortly to
+            confirm availability. For any changes, call us on 024 7704 9561.
           </Text>
         </View>
 

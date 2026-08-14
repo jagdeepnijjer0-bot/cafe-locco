@@ -6,7 +6,7 @@ import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Text } from '@/components/ui/Text';
-import { useAppMenu } from '@/components/AppMenu';
+import { useAppMenu, useReturnToMenuOnBack } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/theme';
 
@@ -40,6 +40,7 @@ const SOCIALS: Social[] = [
 
 export default function SocialScreen() {
   const { open } = useAppMenu();
+  useReturnToMenuOnBack();
 
   const openUrl = (url: string) => {
     Linking.openURL(url).catch(() => {

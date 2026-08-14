@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter, Href } from 'expo-router';
+import { useRouter, useNavigation, Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import { Radius } from '../constants/theme';
@@ -28,10 +28,42 @@ interface NavItem {
 
 interface MenuContextValue {
   open: () => void;
+  /** Open the drawer with no slide animation (already fully open on first paint). */
+  openImmediate: () => void;
   close: () => void;
+  /** Pop straight back to the home screen without opening the drawer. */
+  goHome: () => void;
 }
-const MenuContext = createContext<MenuContextValue>({ open: () => {}, close: () => {} });
+const MenuContext = createContext<MenuContextValue>({
+  open: () => {},
+  openImmediate: () => {},
+  close: () => {},
+  goHome: () => {},
+});
 export const useAppMenu = () => useContext(MenuContext);
+
+/**
+ * Opens the side drawer whenever the current screen is dismissed via a
+ * user-driven back (swipe-right gesture or header/hardware back). Because the
+ * drawer overlay renders above the whole navigator, opening it as the pop
+ * begins means the home screen is never flashed underneath — the user swipes
+ * straight back to the menu. Call this once at the top of every drawer page.
+ */
+export function useReturnToMenuOnBack() {
+  const navigation = useNavigation();
+  const { openImmediate } = useAppMenu();
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', (e) => {
+        // Only intercept genuine back navigation — not programmatic
+        // replace/popToTop (e.g. the MENU page's "back to home" arrow).
+        if (e.data.action.type === 'GO_BACK') {
+          openImmediate();
+        }
+      }),
+    [navigation, openImmediate],
+  );
+}
 
 export function MenuProvider({ children }: { children: React.ReactNode }) {
   const [visible, setVisible] = useState(false);
@@ -40,7 +72,24 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isLoggedIn } = useAuthContext();
 
-  const open = useCallback(() => setVisible(true), []);
+  const open = useCallback(() => {
+    slide.setValue(PANEL_W);
+    fade.setValue(0);
+    setVisible(true);
+    Animated.parallel([
+      Animated.timing(slide, { toValue: 0, duration: 280, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 280, useNativeDriver: true }),
+    ]).start();
+  }, [slide, fade]);
+
+  // Open with the panel already in place (no slide). Used when returning to the
+  // menu via a back gesture so the drawer is up before the home screen shows.
+  const openImmediate = useCallback(() => {
+    slide.setValue(0);
+    fade.setValue(1);
+    setVisible(true);
+  }, [slide, fade]);
+
   const close = useCallback(() => {
     Animated.parallel([
       Animated.timing(slide, { toValue: PANEL_W, duration: 260, useNativeDriver: true }),
@@ -48,19 +97,26 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     ]).start(() => setVisible(false));
   }, [slide, fade]);
 
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(slide, { toValue: 0, duration: 280, useNativeDriver: true }),
-        Animated.timing(fade, { toValue: 1, duration: 280, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible, slide, fade]);
-
+  // Navigate to a tab: push the destination FIRST (it mounts hidden beneath the
+  // drawer overlay), then slide the drawer away to reveal it. Nothing in between
+  // is ever shown, so there is no flash of the previous/home screen.
   const navigate = (href: Href) => {
+    router.push(href);
     close();
-    setTimeout(() => router.push(href), 240);
   };
+
+  // MENU page "back to home" arrow: jump straight to the root (home) screen.
+  // Uses popToTop-style dismissal so the back-gesture drawer interception
+  // (which only fires on GO_BACK) does not kick in.
+  const goHome = useCallback(() => {
+    setVisible(false);
+    const anyRouter = router as unknown as { dismissAll?: () => void };
+    if (typeof anyRouter.dismissAll === 'function') {
+      anyRouter.dismissAll();
+    } else {
+      router.replace('/');
+    }
+  }, [router]);
 
   const otherItems: NavItem[] = [
     { icon: 'information-circle-outline', label: 'OUR STORY', href: '/about' },
@@ -76,7 +132,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <MenuContext.Provider value={{ open, close }}>
+    <MenuContext.Provider value={{ open, openImmediate, close, goHome }}>
       {children}
       {visible && (
         <View style={StyleSheet.absoluteFill} pointerEvents="box-none">

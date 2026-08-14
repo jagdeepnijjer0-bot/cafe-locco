@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Href } from 'expo-router';
@@ -8,7 +8,7 @@ import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { useAppMenu } from '@/components/AppMenu';
+import { useAppMenu, useReturnToMenuOnBack } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Fonts, Spacing, Radius } from '@/constants/theme';
 import type { ReservationInput } from '@/lib/types';
@@ -61,6 +61,15 @@ interface DayChip {
 export default function ReservationsScreen() {
   const router = useRouter();
   const { open } = useAppMenu();
+  useReturnToMenuOnBack();
+
+  // Track the current time so the "at least 1 hour ahead" filter for today's
+  // slots updates on its own as the clock advances (checked every 30s).
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const upcomingDays = useMemo<DayChip[]>(() => {
     const out: DayChip[] = [];
@@ -88,6 +97,23 @@ export default function ReservationsScreen() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Only show times at least 1 hour ahead when the selected date is today.
+  // Future dates keep all slots.
+  const todayValue = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+  const availableTimes = useMemo(() => {
+    if (date !== todayValue) return TIME_SLOTS;
+    const minMinutes = now.getHours() * 60 + now.getMinutes() + 60;
+    return TIME_SLOTS.filter((slot) => {
+      const [h, m] = slot.split(':').map(Number);
+      return h * 60 + m >= minMinutes;
+    });
+  }, [date, todayValue, now]);
+
+  // Clear a selected time once it falls inside the 1-hour window (time passed).
+  useEffect(() => {
+    if (time && !availableTimes.includes(time)) setTime('');
+  }, [availableTimes, time]);
 
   const tap = () => {
     Haptics.selectionAsync().catch(() => {});
@@ -209,33 +235,39 @@ export default function ReservationsScreen() {
           <Text variant="heading" center tracking={3} style={styles.cardTitle}>
             SELECT TIME
           </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}
-          >
-            {TIME_SLOTS.map((slot) => {
-              const selected = slot === time;
-              return (
-                <Pressable
-                  key={slot}
-                  onPress={() => {
-                    tap();
-                    setTime(slot);
-                  }}
-                  style={[styles.timePill, selected && styles.chipSelected]}
-                >
-                  <Text
-                    variant="label"
-                    tracking={2}
-                    color={selected ? Colors.background : Colors.textPrimary}
+          {availableTimes.length === 0 ? (
+            <Text variant="caption" center tracking={1} color={Colors.textMuted}>
+              No more times available today. Please select another date.
+            </Text>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}
+            >
+              {availableTimes.map((slot) => {
+                const selected = slot === time;
+                return (
+                  <Pressable
+                    key={slot}
+                    onPress={() => {
+                      tap();
+                      setTime(slot);
+                    }}
+                    style={[styles.timePill, selected && styles.chipSelected]}
                   >
-                    {slot}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                    <Text
+                      variant="label"
+                      tracking={2}
+                      color={selected ? Colors.background : Colors.textPrimary}
+                    >
+                      {slot}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
 
         {/* GUESTS */}
@@ -318,7 +350,7 @@ export default function ReservationsScreen() {
             </Text>
           ) : null}
 
-          <Button label="Confirm Reservation" onPress={handleConfirm} loading={submitting} style={styles.confirmBtn} />
+          <Button label="Request Reservation" onPress={handleConfirm} loading={submitting} style={styles.confirmBtn} />
         </View>
 
         <Text style={styles.privacyNote}>

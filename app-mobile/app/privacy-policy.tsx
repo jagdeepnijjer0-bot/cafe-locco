@@ -4,7 +4,7 @@ import { View, StyleSheet } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
-import { useAppMenu } from '@/components/AppMenu';
+import { useAppMenu, useReturnToMenuOnBack } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Fonts, Spacing } from '@/constants/theme';
 
@@ -111,6 +111,7 @@ const SECTIONS: Section[] = [
  *  the Our Story styling. Scrollable long-form legal content. */
 export default function PrivacyPolicyScreen() {
   const { open } = useAppMenu();
+  useReturnToMenuOnBack();
 
   return (
     <Screen scroll contentStyle={styles.content}>

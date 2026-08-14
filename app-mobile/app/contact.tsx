@@ -9,7 +9,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { useAppMenu } from '@/components/AppMenu';
+import { useAppMenu, useReturnToMenuOnBack } from '@/components/AppMenu';
 import { submitContactMessage } from '@/lib/submissions';
 import { Colors } from '@/constants/colors';
 import { Fonts, Spacing, Radius } from '@/constants/theme';
@@ -50,6 +50,7 @@ const CONTACT_ROWS: ContactRow[] = [
 
 export default function ContactScreen() {
   const { open } = useAppMenu();
+  useReturnToMenuOnBack();
   const router = useRouter();
 
   const [name, setName] = useState('');

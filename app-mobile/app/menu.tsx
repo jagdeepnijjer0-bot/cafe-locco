@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
-import { useAppMenu } from '@/components/AppMenu';
+import { useAppMenu, useReturnToMenuOnBack } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Fonts, Spacing, Radius } from '@/constants/theme';
 import { menu, MenuCategory, Diet } from '@/constants/menu';
@@ -32,14 +32,15 @@ function DietBadges({ diet, size = 'sm' }: { diet?: Diet[]; size?: 'sm' | 'lg' }
 
 /** Menu — category tabs (with icons) + items; tap an item for the detail page. */
 export default function MenuScreen() {
-  const { open } = useAppMenu();
+  const { open, goHome } = useAppMenu();
+  useReturnToMenuOnBack();
   const [activeId, setActiveId] = useState(menu[0].id);
 
   const active = menu.find((c) => c.id === activeId) as MenuCategory;
 
   return (
     <Screen backgroundColor="#000">
-      <Header title="MENU" showBack onMenu={open} />
+      <Header title="MENU" showBack onBack={goHome} onMenu={open} />
 
       {/* Category tab bar with icons */}
       <View style={styles.tabBarWrap}>

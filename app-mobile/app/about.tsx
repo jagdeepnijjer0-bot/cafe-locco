@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
 import { Text } from '@/components/ui/Text';
-import { useAppMenu } from '@/components/AppMenu';
+import { useAppMenu, useReturnToMenuOnBack } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Fonts, Spacing, Radius } from '@/constants/theme';
 
@@ -26,6 +26,7 @@ const MISSION =
  *  gold-bordered content boxes. Text content unchanged. */
 export default function AboutScreen() {
   const { open } = useAppMenu();
+  useReturnToMenuOnBack();
 
   return (
     <Screen scroll contentStyle={styles.content}>

@@ -9,16 +9,20 @@ interface HeaderProps {
   title?: string;
   showBack?: boolean;
   onMenu?: () => void;
+  /** Custom back handler. When provided, the back chevron always shows and
+   *  calls this instead of the default router.back(). */
+  onBack?: () => void;
 }
 
 /** Top bar: optional back chevron (left) + title + hamburger (right). */
-export function Header({ title, showBack = true, onMenu }: HeaderProps) {
+export function Header({ title, showBack = true, onMenu, onBack }: HeaderProps) {
   const router = useRouter();
+  const canBack = showBack && (onBack != null || router.canGoBack());
   return (
     <View style={styles.wrap}>
       <View style={styles.side}>
-        {showBack && router.canGoBack() ? (
-          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.iconBtn}>
+        {canBack ? (
+          <Pressable onPress={onBack ?? (() => router.back())} hitSlop={12} style={styles.iconBtn}>
             <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
           </Pressable>
         ) : null}

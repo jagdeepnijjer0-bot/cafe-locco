@@ -1,8 +1,7 @@
-import React, { useCallback, useRef } from 'react';
+import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useFocusEffect } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Colors } from '@/constants/colors';
 import { useAppMenu } from '@/components/AppMenu';
@@ -12,19 +11,6 @@ const logo = require('@/assets/images/logo-transparent.png');
 /** Home — genuine Figma: black screen, centered Cafe Locco logo, hamburger menu. */
 export default function HomeScreen() {
   const { open } = useAppMenu();
-
-  // When the user swipes/navigates BACK to the top level, land on the side menu
-  // (drawer) rather than the bare logo screen. Skip the very first focus (launch).
-  const firstFocus = useRef(true);
-  useFocusEffect(
-    useCallback(() => {
-      if (firstFocus.current) {
-        firstFocus.current = false;
-        return;
-      }
-      open();
-    }, [open]),
-  );
 
   return (
     <Screen backgroundColor="#000">
