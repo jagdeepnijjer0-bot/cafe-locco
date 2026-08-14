@@ -24,9 +24,28 @@ function makeReference(): string {
 }
 
 /**
+ * True when an insert failed because the `reference` column doesn't exist yet
+ * (migration 027 not applied). PGRST204 = PostgREST schema-cache column-not-found;
+ * 42703 = Postgres undefined_column.
+ */
+function isMissingReferenceColumn(error: { code?: string; message?: string }): boolean {
+  const code = error.code ?? '';
+  const message = (error.message ?? '').toLowerCase();
+  return (
+    code === 'PGRST204' ||
+    code === '42703' ||
+    (message.includes('reference') && message.includes('column'))
+  );
+}
+
+/**
  * Store a table booking in public.reservations and return its reference.
- * The reference is generated here so the exact same value is persisted to the
- * database, shown to the guest, and included in the notification email.
+ * The reference is generated here so the exact same value is shown to the guest,
+ * persisted to the database, and included in the notification email.
+ *
+ * If the `reference` column isn't present yet (migration 027 not applied), the
+ * booking is saved WITHOUT it so a submission never fails — the guest still sees
+ * their reference, and it will persist automatically once the column is added.
  */
 export async function submitReservation(input: ReservationInput): Promise<string> {
   // The form's date is DD/MM/YYYY; the DB column is a DATE (needs YYYY-MM-DD).
@@ -35,8 +54,7 @@ export async function submitReservation(input: ReservationInput): Promise<string
 
   const reference = makeReference();
 
-  const { error } = await supabase.from('reservations').insert({
-    reference,
+  const booking = {
     name: input.name,
     email: input.email,
     phone: input.phone,
@@ -44,8 +62,19 @@ export async function submitReservation(input: ReservationInput): Promise<string
     time: input.time,
     guests: input.guests,
     notes: input.notes ?? null,
-  });
-  if (error) throw error;
+  };
+
+  const { error } = await supabase.from('reservations').insert({ reference, ...booking });
+
+  if (error) {
+    if (isMissingReferenceColumn(error)) {
+      // Retry without the reference so bookings still save before migration 027.
+      const { error: retryError } = await supabase.from('reservations').insert(booking);
+      if (retryError) throw retryError;
+      return reference;
+    }
+    throw error;
+  }
 
   return reference;
 }
