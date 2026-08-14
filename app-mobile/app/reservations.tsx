@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
@@ -320,6 +320,13 @@ export default function ReservationsScreen() {
 
           <Button label="Confirm Reservation" onPress={handleConfirm} loading={submitting} style={styles.confirmBtn} />
         </View>
+
+        <Text style={styles.privacyNote}>
+          By making a reservation you agree to our{' '}
+          <Text style={styles.privacyLink} onPress={() => router.push('/privacy-policy' as Href)}>
+            Privacy Policy
+          </Text>
+        </Text>
       </View>
     </Screen>
   );
@@ -381,4 +388,20 @@ const styles = StyleSheet.create({
   notes: { height: 110, paddingTop: 14, textAlignVertical: 'top' },
   errorText: { marginBottom: Spacing.md },
   confirmBtn: { marginTop: Spacing.sm },
+  privacyNote: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 11.5,
+    letterSpacing: 0.5,
+    lineHeight: 18,
+    color: 'rgba(212, 175, 55, 0.7)',
+    textAlign: 'center',
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  privacyLink: {
+    color: Colors.gold,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
 });

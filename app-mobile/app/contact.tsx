@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter, Href } from 'expo-router';
 
 import { Screen } from '@/components/ui/Screen';
 import { Header } from '@/components/ui/Header';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { useAppMenu } from '@/components/AppMenu';
 import { submitContactMessage } from '@/lib/submissions';
 import { Colors } from '@/constants/colors';
-import { Spacing, Radius } from '@/constants/theme';
+import { Fonts, Spacing, Radius } from '@/constants/theme';
 
 const ADDRESS = '139 Daventry Rd, Coventry CV3 5HD';
 const PHONE = '024 7704 9561';
@@ -49,6 +50,7 @@ const CONTACT_ROWS: ContactRow[] = [
 
 export default function ContactScreen() {
   const { open } = useAppMenu();
+  const router = useRouter();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -165,6 +167,13 @@ export default function ContactScreen() {
           style={styles.submit}
         />
       </View>
+
+      <Text style={styles.privacyNote}>
+        By sending a message you agree to our{' '}
+        <Text style={styles.privacyLink} onPress={() => router.push('/privacy-policy' as Href)}>
+          Privacy Policy
+        </Text>
+      </Text>
     </Screen>
   );
 }
@@ -203,4 +212,19 @@ const styles = StyleSheet.create({
   formTitle: { marginBottom: Spacing.lg },
   messageInput: { height: 120, paddingTop: 14 },
   submit: { marginTop: Spacing.sm },
+  privacyNote: {
+    fontFamily: Fonts.family,
+    fontWeight: '400',
+    fontSize: 11.5,
+    letterSpacing: 0.5,
+    lineHeight: 18,
+    color: 'rgba(212, 175, 55, 0.7)',
+    textAlign: 'center',
+    marginTop: Spacing.lg,
+  },
+  privacyLink: {
+    color: Colors.gold,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
 });
