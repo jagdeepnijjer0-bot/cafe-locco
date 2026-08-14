@@ -12,13 +12,31 @@ import { ReservationInput, ContactMessageInput } from './types';
 // NOTIFY_EMAIL; see supabase/functions/notify-submission.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Store a table booking in public.reservations. */
-export async function submitReservation(input: ReservationInput): Promise<void> {
+const REFERENCE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+/** Generate a human-friendly booking reference, e.g. "CL-W647KN". */
+function makeReference(): string {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += REFERENCE_ALPHABET[Math.floor(Math.random() * REFERENCE_ALPHABET.length)];
+  }
+  return `CL-${code}`;
+}
+
+/**
+ * Store a table booking in public.reservations and return its reference.
+ * The reference is generated here so the exact same value is persisted to the
+ * database, shown to the guest, and included in the notification email.
+ */
+export async function submitReservation(input: ReservationInput): Promise<string> {
   // The form's date is DD/MM/YYYY; the DB column is a DATE (needs YYYY-MM-DD).
   const [dd, mm, yyyy] = input.date.split('/');
   const isoDate = dd && mm && yyyy ? `${yyyy}-${mm}-${dd}` : input.date;
 
+  const reference = makeReference();
+
   const { error } = await supabase.from('reservations').insert({
+    reference,
     name: input.name,
     email: input.email,
     phone: input.phone,
@@ -28,6 +46,8 @@ export async function submitReservation(input: ReservationInput): Promise<void> 
     notes: input.notes ?? null,
   });
   if (error) throw error;
+
+  return reference;
 }
 
 /** Store a contact-form message in public.contact_messages. */

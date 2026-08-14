@@ -27,15 +27,16 @@ serve(async (req) => {
     let subject = '';
     let lines: string[] = [];
     if (table === 'reservations') {
-      subject = `New reservation — ${r.name} (${r.date} ${r.time})`;
+      subject = `New reservation request ${r.reference ?? ''} — ${r.name} (${r.date} ${r.time})`.trim();
       lines = [
-        `Name:   ${r.name}`,
-        `Email:  ${r.email}`,
-        `Phone:  ${r.phone}`,
-        `Date:   ${r.date}`,
-        `Time:   ${r.time}`,
-        `Guests: ${r.guests}`,
-        `Notes:  ${r.notes ?? '-'}`,
+        `Reference: ${r.reference ?? '-'}`,
+        `Name:      ${r.name}`,
+        `Email:     ${r.email}`,
+        `Phone:     ${r.phone}`,
+        `Date:      ${r.date}`,
+        `Time:      ${r.time}`,
+        `Guests:    ${r.guests}`,
+        `Notes:     ${r.notes ?? '-'}`,
       ];
     } else if (table === 'contact_messages') {
       subject = `New contact message — ${r.name}`;

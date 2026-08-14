@@ -171,8 +171,9 @@ export default function ReservationsScreen() {
     };
 
     setSubmitting(true);
+    let reference: string;
     try {
-      await submitReservation(reservation);
+      reference = await submitReservation(reservation);
     } catch (e) {
       setSubmitting(false);
       const message = e instanceof Error ? e.message : 'Please try again.';
@@ -184,6 +185,7 @@ export default function ReservationsScreen() {
     router.push({
       pathname: '/reservation-confirmation',
       params: {
+        reference,
         name: reservation.name,
         email: reservation.email,
         phone: reservation.phone,

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -9,8 +9,6 @@ import { Button } from '@/components/ui/Button';
 import { useAppMenu } from '@/components/AppMenu';
 import { Colors } from '@/constants/colors';
 import { Spacing, Radius } from '@/constants/theme';
-
-const ALPHANUM = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 function firstParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? '';
@@ -54,14 +52,7 @@ export default function ReservationConfirmationScreen() {
   const time = firstParam(params.time);
   const guests = firstParam(params.guests) || '0';
   const notes = firstParam(params.notes);
-
-  const confirmationNumber = useMemo(() => {
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += ALPHANUM[Math.floor(Math.random() * ALPHANUM.length)];
-    }
-    return `CL-${code}`;
-  }, []);
+  const reference = firstParam(params.reference) || '—';
 
   const guestCount = Number(guests) || 0;
 
@@ -87,7 +78,7 @@ export default function ReservationConfirmationScreen() {
             REQUEST REFERENCE
           </Text>
           <Text variant="title" center color={Colors.white} style={styles.confNumber}>
-            {confirmationNumber}
+            {reference}
           </Text>
         </View>
 

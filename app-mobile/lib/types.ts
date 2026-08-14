@@ -22,6 +22,7 @@ export interface GalleryImage {
 export interface Reservation {
   id: string;
   user_id: string | null;
+  reference: string | null;
   name: string;
   email: string;
   phone: string;
