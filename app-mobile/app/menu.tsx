@@ -32,7 +32,7 @@ function DietBadges({ diet, size = 'sm' }: { diet?: Diet[]; size?: 'sm' | 'lg' }
 
 /** Menu — category tabs (with icons) + items; tap an item for the detail page. */
 export default function MenuScreen() {
-  const { open, goHome } = useAppMenu();
+  const { open } = useAppMenu();
   useReturnToMenuOnBack();
   const [activeId, setActiveId] = useState(menu[0].id);
 
@@ -40,7 +40,9 @@ export default function MenuScreen() {
 
   return (
     <Screen backgroundColor="#000">
-      <Header title="MENU" showBack onBack={goHome} onMenu={open} />
+      {/* Back arrow opens the side drawer (consistent with swipe-right on every
+          page), rather than jumping to the home screen. */}
+      <Header title="MENU" showBack onBack={open} onMenu={open} />
 
       {/* Category tab bar with icons */}
       <View style={styles.tabBarWrap}>
