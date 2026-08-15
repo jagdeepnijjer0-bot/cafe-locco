@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useRouter, useNavigation, Href } from 'expo-router';
+import { useRouter, useNavigation, usePathname, Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import { Radius } from '../constants/theme';
@@ -70,6 +70,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   const slide = useRef(new Animated.Value(PANEL_W)).current;
   const fade = useRef(new Animated.Value(0)).current;
   const router = useRouter();
+  const pathname = usePathname();
   const { isLoggedIn } = useAuthContext();
 
   const open = useCallback(() => {
@@ -97,16 +98,29 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     ]).start(() => setVisible(false));
   }, [slide, fade]);
 
-  // Navigate to a tab. Dismiss the drawer IMMEDIATELY and unconditionally
-  // (reset the animated values + hide) before navigating, so it can never linger
-  // on the destination page — the animated close()'s completion callback can be
-  // delayed or interrupted by the navigation transition, which left the drawer
-  // visible over the new page.
+  // Navigate to a tab.
+  //
+  // Drawer tabs are SIBLINGS, not a hierarchy, so they must never stack on top
+  // of one another. `push` keeps the previous tab mounted underneath the new one
+  // (it showed through behind the destination); `replace` swaps it out so the
+  // previous page is unmounted and the destination is completely clean.
+  //
+  // The one screen we keep beneath every tab is home (the stack root): it's what
+  // enables the swipe-back gesture that opens the drawer. So we push only when
+  // we're on home, and replace when moving between tabs — the stack stays
+  // [home, currentTab] and never grows.
+  //
+  // The drawer is hidden immediately (reset + setVisible(false)) before
+  // navigating so it can never linger on the destination.
   const navigate = (href: Href) => {
     slide.setValue(PANEL_W);
     fade.setValue(0);
     setVisible(false);
-    router.push(href);
+    if (pathname === '/') {
+      router.push(href);
+    } else {
+      router.replace(href);
+    }
   };
 
   // MENU page "back to home" arrow: jump straight to the root (home) screen.
