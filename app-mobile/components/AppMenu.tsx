@@ -97,12 +97,16 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     ]).start(() => setVisible(false));
   }, [slide, fade]);
 
-  // Navigate to a tab: push the destination FIRST (it mounts hidden beneath the
-  // drawer overlay), then slide the drawer away to reveal it. Nothing in between
-  // is ever shown, so there is no flash of the previous/home screen.
+  // Navigate to a tab. Dismiss the drawer IMMEDIATELY and unconditionally
+  // (reset the animated values + hide) before navigating, so it can never linger
+  // on the destination page — the animated close()'s completion callback can be
+  // delayed or interrupted by the navigation transition, which left the drawer
+  // visible over the new page.
   const navigate = (href: Href) => {
+    slide.setValue(PANEL_W);
+    fade.setValue(0);
+    setVisible(false);
     router.push(href);
-    close();
   };
 
   // MENU page "back to home" arrow: jump straight to the root (home) screen.
