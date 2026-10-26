@@ -28,6 +28,7 @@ serve(async (req) => {
     if (authError || !user) throw new Error('Unauthorized');
 
     // Remove the user's data rows (best-effort), then the auth user itself.
+    await supabase.from('rewards_transactions').delete().eq('profile_id', user.id);
     await supabase.from('coffee_claims').delete().eq('user_id', user.id);
     await supabase.from('restaurant_memberships').delete().eq('user_id', user.id);
     await supabase.from('restaurant_profiles').delete().eq('id', user.id);
