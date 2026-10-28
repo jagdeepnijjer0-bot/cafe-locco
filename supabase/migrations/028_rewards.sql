@@ -230,6 +230,10 @@ $$;
 -- call these. Customers (anon/authenticated) cannot self-award or self-redeem.
 revoke all on function public.rewards_award(uuid, numeric, text)  from public;
 revoke all on function public.rewards_redeem(uuid, integer, text) from public;
+-- On Supabase, anon/authenticated also hold direct EXECUTE grants via default
+-- privileges, so revoke those explicitly too (not just from public).
+revoke execute on function public.rewards_award(uuid, numeric, text)  from anon, authenticated;
+revoke execute on function public.rewards_redeem(uuid, integer, text) from anon, authenticated;
 grant execute on function public.rewards_award(uuid, numeric, text)  to service_role;
 grant execute on function public.rewards_redeem(uuid, integer, text) to service_role;
 
