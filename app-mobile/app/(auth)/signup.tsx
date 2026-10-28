@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Href } from 'expo-router';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
@@ -25,6 +25,7 @@ const EMAIL_RE = /\S+@\S+\.\S+/;
 interface FormErrors {
   fullName?: string;
   email?: string;
+  phone?: string;
   password?: string;
   confirmPassword?: string;
 }
@@ -35,6 +36,7 @@ export default function SignUpScreen() {
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -47,6 +49,7 @@ export default function SignUpScreen() {
     if (!fullName.trim()) next.fullName = 'Full name is required';
     if (!email.trim()) next.email = 'Email is required';
     else if (!EMAIL_RE.test(email)) next.email = 'Invalid email format';
+    if (!phone.trim()) next.phone = 'Phone number is required';
     if (!password) next.password = 'Password is required';
     else if (password.length < 6) next.password = 'Password must be at least 6 characters';
     if (password !== confirmPassword) next.confirmPassword = 'Passwords do not match';
@@ -59,8 +62,8 @@ export default function SignUpScreen() {
     setErrors({});
     setSubmitting(true);
     try {
-      await signUp(email.trim(), password, fullName.trim());
-      router.replace('/dashboard');
+      await signUp(email.trim(), password, fullName.trim(), phone.trim());
+      router.replace('/rewards' as Href);
     } catch (err: any) {
       Alert.alert('Sign Up Failed', err?.message ?? 'Unable to create account. Please try again.');
     } finally {
@@ -83,7 +86,7 @@ export default function SignUpScreen() {
             CREATE ACCOUNT
           </Text>
           <Text variant="caption" center color={Colors.textMuted} tracking={2} style={styles.subtitle}>
-            CREATE YOUR ACCOUNT TO BEGIN YOUR PREMIUM MEMBERSHIP
+            CREATE AN ACCOUNT TO JOIN CAFÉ LOCCO REWARDS
           </Text>
         </View>
 
@@ -108,6 +111,16 @@ export default function SignUpScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             textContentType="emailAddress"
+          />
+
+          <Input
+            label="Phone Number"
+            placeholder="07xxx xxxxxx"
+            value={phone}
+            onChangeText={setPhone}
+            error={errors.phone}
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
           />
 
           <View>

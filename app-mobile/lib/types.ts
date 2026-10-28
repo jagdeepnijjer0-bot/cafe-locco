@@ -88,6 +88,8 @@ export interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
   phone: string | null;
+  points_balance: number;
+  prize_draw_entries: number;
   created_at: string;
   updated_at: string;
 }

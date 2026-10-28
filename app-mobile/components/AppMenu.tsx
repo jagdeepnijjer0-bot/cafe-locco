@@ -140,6 +140,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     { icon: 'information-circle-outline', label: 'OUR STORY', href: '/about' },
     { icon: 'cafe-outline', label: 'MENU', href: '/menu' },
     { icon: 'calendar-outline', label: 'RESERVATIONS', href: '/reservations' },
+    { icon: 'gift-outline', label: 'REWARDS', href: '/rewards' as Href },
     { icon: 'images-outline', label: 'GALLERY', href: '/gallery' },
     // MEMBERSHIP hidden for launch — restore by uncommenting the block below.
     // ...(!isLoggedIn
