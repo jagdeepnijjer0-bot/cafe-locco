@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0A0A0A" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<title>Café Locco · Staff Rewards</title>
+
+<!-- QR scanning: html5-qrcode, pinned CDN version -->
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+  :root{
+    --bg:#0A0A0A; --surface:#171717; --surface2:#202020;
+    --border:#2A2A2A; --gold:#D4AF37; --gold-soft:rgba(212,175,55,.35);
+    --text:#FFFFFF; --muted:rgba(255,255,255,.55); --error:#E05555; --ok:#4CAF84;
+    --font:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);color:var(--text);font-family:var(--font);
+    display:flex;flex-direction:column;min-height:100dvh;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  /* Top bar */
+  .bar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .brand{font-weight:700;letter-spacing:3px;font-size:14px}
+  .brand span{color:var(--gold)}
+  .lock{display:none;background:none;border:1px solid var(--border);color:var(--muted);
+    border-radius:10px;padding:8px 12px;font-size:13px;letter-spacing:1px;font-family:var(--font)}
+  .lock.show{display:inline-block}
+
+  main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:20px;max-width:560px;width:100%;margin:0 auto}
+
+  /* Views */
+  .view{display:none;flex-direction:column;gap:18px;animation:fade .18s ease}
+  .view.active{display:flex}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  h1{font-size:20px;letter-spacing:2px;font-weight:700;margin:0;text-align:center}
+  .sub{color:var(--muted);text-align:center;font-size:14px;letter-spacing:1px;margin:0}
+  .rule{width:44px;height:2px;background:var(--gold);align-self:center;border-radius:2px}
+
+  /* Buttons */
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+    border-radius:16px;padding:22px;font-size:18px;font-weight:600;letter-spacing:1.5px;
+    font-family:var(--font);cursor:pointer;background:#0E0E0E;color:var(--gold);
+    border:1.5px solid var(--gold);min-height:68px}
+  .btn:active{opacity:.75}
+  .btn.secondary{border-color:var(--border);color:var(--muted);background:transparent;font-size:15px;min-height:54px;padding:16px}
+  .btn.ghost{border:none;background:none;color:var(--muted);min-height:auto;padding:10px;font-size:14px;letter-spacing:1px}
+  .btn[disabled]{opacity:.4;pointer-events:none}
+  .btn .ico{font-size:24px;line-height:1}
+
+  /* PIN */
+  .dots{display:flex;gap:14px;justify-content:center;margin:8px 0}
+  .dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--gold-soft)}
+  .dot.on{background:var(--gold);border-color:var(--gold)}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px}
+  .key{height:72px;border-radius:16px;border:1px solid var(--border);background:var(--surface);
+    color:var(--text);font-size:26px;font-weight:600;font-family:var(--font);cursor:pointer}
+  .key:active{background:var(--surface2)}
+  .key.fn{font-size:16px;letter-spacing:1px;color:var(--muted)}
+
+  /* Cards */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px}
+  .card.gold{border-color:var(--gold-soft)}
+  .cust-name{font-size:22px;font-weight:700;letter-spacing:1px;text-align:center;margin:0 0 4px}
+  .balance{font-size:60px;font-weight:700;color:var(--gold);text-align:center;line-height:1.05;margin:6px 0 0}
+  .balance-lbl{text-align:center;color:var(--muted);letter-spacing:4px;font-size:12px;margin-top:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+  .chip{border:1px solid var(--gold-soft);color:var(--gold);border-radius:999px;padding:7px 14px;font-size:13px;letter-spacing:1px}
+  .chip.muted{border-color:var(--border);color:var(--muted)}
+
+  /* Amount input */
+  .amount-wrap{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+    border-radius:16px;padding:0 20px;min-height:72px}
+  .amount-wrap .cur{font-size:30px;color:var(--muted)}
+  #amount{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:34px;font-weight:600;
+    font-family:var(--font);width:100%}
+  .label{color:var(--muted);letter-spacing:2px;font-size:12px;text-align:center}
+
+  /* Tier buttons */
+  .tier{display:flex;align-items:center;gap:16px;width:100%;border-radius:16px;padding:18px 20px;
+    background:var(--surface);border:1.5px solid var(--border);color:var(--text);cursor:pointer;font-family:var(--font)}
+  .tier:active{opacity:.8}
+  .tier.sel{border-color:var(--gold);background:#1b1710}
+  .tier .pts{font-size:22px;font-weight:700;color:var(--gold);width:64px;text-align:left}
+  .tier .nm{font-size:16px;font-weight:600;letter-spacing:1px}
+
+  /* Camera */
+  #reader{width:100%;border-radius:18px;overflow:hidden;background:#000;min-height:260px}
+  #reader video{border-radius:18px}
+  .scan-hint{color:var(--muted);text-align:center;font-size:13px;letter-spacing:1px}
+
+  /* Messages */
+  .msg{border-radius:14px;padding:14px 16px;font-size:14px;letter-spacing:.5px;text-align:center;display:none}
+  .msg.show{display:block}
+  .msg.err{background:rgba(224,85,85,.12);border:1px solid rgba(224,85,85,.4);color:#ff9a9a}
+  .msg.ok{background:rgba(76,175,132,.12);border:1px solid rgba(76,175,132,.4);color:#9ee7c3}
+
+  .result-ico{font-size:52px;text-align:center}
+  .result-big{font-size:40px;font-weight:700;text-align:center}
+  .result-sub{color:var(--muted);text-align:center;font-size:15px;letter-spacing:.5px}
+  .draw{background:#1b1710;border:1px solid var(--gold);border-radius:14px;padding:16px;text-align:center;color:var(--gold);font-weight:600;letter-spacing:1px}
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="brand">CAFÉ <span>LOCCO</span> · STAFF</div>
+    <button class="lock" id="lockBtn" onclick="lockSession()">LOCK</button>
+  </div>
+
+  <main>
+    <!-- 1. PIN -->
+    <section class="view" id="view-pin">
+      <h1>STAFF PIN</h1>
+      <div class="rule"></div>
+      <div class="dots" id="pinDots"></div>
+      <div class="msg err" id="pinErr"></div>
+      <div class="keypad" id="keypad"></div>
+      <button class="btn" id="pinLogin" onclick="doLogin()">LOG IN</button>
+    </section>
+
+    <!-- 2. Home -->
+    <section class="view" id="view-home">
+      <h1>REWARDS</h1>
+      <div class="rule"></div>
+      <button class="btn" onclick="startFlow('award')"><span class="ico">＋</span> ADD POINTS</button>
+      <button class="btn" onclick="startFlow('redeem')"><span class="ico">★</span> REDEEM REWARD</button>
+    </section>
+
+    <!-- 3. Scan -->
+    <section class="view" id="view-scan">
+      <h1 id="scanTitle">SCAN CODE</h1>
+      <p class="sub">Point the camera at the customer's rewards code</p>
+      <div id="reader"></div>
+      <div class="msg err" id="scanErr"></div>
+      <button class="btn secondary" id="scanRetry" style="display:none" onclick="startScan()">TRY AGAIN</button>
+      <button class="btn ghost" onclick="goHome()">← CANCEL</button>
+    </section>
+
+    <!-- 4/5/6. Customer + action -->
+    <section class="view" id="view-action">
+      <div class="card gold">
+        <p class="cust-name" id="custName">—</p>
+        <div class="balance" id="custBalance">0</div>
+        <div class="balance-lbl">POINTS</div>
+        <div class="chips" id="custChips"></div>
+      </div>
+
+      <!-- Award panel -->
+      <div id="awardPanel" style="display:none;gap:16px;flex-direction:column">
+        <p class="label">AMOUNT SPENT</p>
+        <div class="amount-wrap">
+          <span class="cur">£</span>
+          <input id="amount" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" />
+        </div>
+        <div class="msg err" id="awardErr"></div>
+        <button class="btn" id="awardConfirm" onclick="confirmAward()">CONFIRM · ADD POINTS</button>
+      </div>
+
+      <!-- Redeem panel -->
+      <div id="redeemPanel" style="display:none;gap:12px;flex-direction:column">
+        <p class="label">SELECT THE REWARD BEING CLAIMED</p>
+        <div id="tierList" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div class="msg err" id="redeemErr"></div>
+        <button class="btn" id="redeemConfirm" onclick="confirmRedeem()" disabled>CONFIRM · REDEEM</button>
+      </div>
+
+      <button class="btn ghost" onclick="goHome()">← CANCEL</button>
+    </section>
+
+    <!-- 7. Result -->
+    <section class="view" id="view-result">
+      <div class="result-ico" id="resIco">✓</div>
+      <div class="result-big" id="resBig"></div>
+      <div class="result-sub" id="resSub"></div>
+      <div class="draw" id="resDraw" style="display:none">🎉 Entered into the prize draw!</div>
+      <button class="btn" onclick="goHome()">DONE</button>
+    </section>
+  </main>
+
+<script>
+/* ===================== CONFIG ===================== */
+const SUPABASE_URL = "https://adspyshcuylalvhtothn.supabase.co";
+const SUPABASE_ANON_KEY = "REPLACE_WITH_ANON_PUBLIC_KEY"; // public anon key — paste before deploy
+/* ================================================= */
+
+const FN_URL = SUPABASE_URL + "/functions/v1/rewards-staff";
+const TIER_LABELS = { 75: "Free drink", 150: "Free meal", 250: "Free dessert" };
+const SS_TOKEN = "cl_staff_token", SS_EXP = "cl_staff_exp";
+
+const state = { mode: null, qr: null, customer: null, selectedTier: null, pin: "" };
+
+/* ---------- tiny helpers ---------- */
+const $ = (id) => document.getElementById(id);
+function show(view){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); $('view-'+view).classList.add('active'); }
+function setMsg(el, text, kind){ el.textContent = text||''; el.className = 'msg ' + (kind||'err') + (text ? ' show' : ''); }
+function clearMsg(el){ el.textContent=''; el.className='msg'; }
+
+function staffToken(){ return sessionStorage.getItem(SS_TOKEN); }
+function sessionValid(){
+  const t = staffToken(), exp = parseInt(sessionStorage.getItem(SS_EXP)||'0',10);
+  return !!t && exp > Math.floor(Date.now()/1000) + 5;
+}
+function lockSession(){ sessionStorage.removeItem(SS_TOKEN); sessionStorage.removeItem(SS_EXP); stopScan(); $('lockBtn').classList.remove('show'); state.pin=""; renderDots(); gotoPin(); }
+
+/* ---------- backend ---------- */
+async function api(action, extra){
+  const body = Object.assign({ action }, extra || {});
+  if (action !== 'login') body.staff_token = staffToken();
+  let res, data;
+  try {
+    res = await fetch(FN_URL, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    data = await res.json().catch(()=>({}));
+  } catch (e) {
+    throw { code: 'NETWORK', message: 'Network error — check the connection' };
+  }
+  if (!res.ok || data.error) {
+    throw { code: data.error || ('HTTP_' + res.status), message: data.error || ('Error ' + res.status) };
+  }
+  return data;
+}
+// Central handling of a session that the server rejected.
+function handleSessionInvalid(){ sessionStorage.removeItem(SS_TOKEN); sessionStorage.removeItem(SS_EXP); $('lockBtn').classList.remove('show'); gotoPin('Session expired — please sign in again.'); }
+
+/* ===================== PIN ===================== */
+function renderDots(){
+  const n = state.pin.length;
+  const dots = $('pinDots'); dots.innerHTML='';
+  const count = Math.max(4, n); // show at least 4 slots, grow as they type
+  for (let i=0;i<count;i++){ const d=document.createElement('div'); d.className='dot'+(i<n?' on':''); dots.appendChild(d); }
+}
+function buildKeypad(){
+  const kp = $('keypad'); kp.innerHTML='';
+  const keys = ['1','2','3','4','5','6','7','8','9','clear','0','back'];
+  keys.forEach(k=>{
+    const b=document.createElement('button');
+    if (k==='clear'){ b.className='key fn'; b.textContent='CLEAR'; b.onclick=()=>{ state.pin=''; renderDots(); }; }
+    else if (k==='back'){ b.className='key fn'; b.textContent='⌫'; b.onclick=()=>{ state.pin=state.pin.slice(0,-1); renderDots(); }; }
+    else { b.className='key'; b.textContent=k; b.onclick=()=>{ if(state.pin.length<10){ state.pin+=k; renderDots(); } }; }
+    kp.appendChild(b);
+  });
+}
+function gotoPin(errText){ state.pin=''; renderDots(); setMsg($('pinErr'), errText||'', 'err'); show('pin'); }
+async function doLogin(){
+  if (state.pin.length < 3){ setMsg($('pinErr'),'Enter your PIN','err'); return; }
+  const pin = state.pin; // kept only in memory
+  $('pinLogin').setAttribute('disabled','');
+  try {
+    const data = await api('login', { pin });
+    sessionStorage.setItem(SS_TOKEN, data.staff_token);
+    sessionStorage.setItem(SS_EXP, String(data.expires_at||0));
+    state.pin=''; renderDots(); clearMsg($('pinErr'));
+    goHome();
+  } catch (e) {
+    if (e.code === 'INVALID_PIN') setMsg($('pinErr'),'Incorrect PIN','err');
+    else setMsg($('pinErr'), e.message || 'Could not sign in','err');
+    state.pin=''; renderDots();
+  } finally {
+    $('pinLogin').removeAttribute('disabled');
+  }
+}
+
+/* ===================== HOME ===================== */
+function goHome(){ stopScan(); $('lockBtn').classList.add('show'); show('home'); }
+
+/* ===================== SCAN ===================== */
+let scanner = null, scanning = false, scanLock = false;
+function startFlow(mode){ state.mode = mode; state.qr=null; state.customer=null; state.selectedTier=null; startScan(); }
+
+async function startScan(){
+  $('scanTitle').textContent = state.mode === 'award' ? 'ADD POINTS · SCAN' : 'REDEEM · SCAN';
+  clearMsg($('scanErr')); $('scanRetry').style.display='none';
+  show('scan');
+  if (!window.Html5Qrcode){ setMsg($('scanErr'),'Scanner failed to load. Check your connection and reload.','err'); $('scanRetry').style.display='block'; return; }
+  await stopScan();
+  scanLock = false;
+  scanner = new Html5Qrcode('reader', { verbose:false });
+  try {
+    await scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      onScan,
+      ()=>{} /* per-frame decode errors: ignore */
+    );
+    scanning = true;
+  } catch (e) {
+    scanning = false;
+    const denied = (''+e).toLowerCase().includes('permission') || (''+e).toLowerCase().includes('notallowed');
+    setMsg($('scanErr'), denied
+      ? 'Camera permission is blocked. Allow camera access in the browser, then try again.'
+      : 'No camera available, or it could not start. Check permissions and try again.','err');
+    $('scanRetry').style.display='block';
+  }
+}
+async function stopScan(){
+  if (scanner && scanning){ try{ await scanner.stop(); }catch(_){} try{ scanner.clear(); }catch(_){} }
+  scanning = false; scanner = null;
+}
+async function onScan(text){
+  if (scanLock) return; scanLock = true;
+  state.qr = text;
+  await stopScan();
+  await lookupCustomer();
+}
+
+/* ===================== LOOKUP ===================== */
+async function lookupCustomer(){
+  try {
+    const d = await api('lookup', { qr: state.qr });
+    state.customer = d;
+    renderCustomer(d);
+    show('action');
+  } catch (e) { handleActionError(e, /*fromScan*/true); }
+}
+function renderCustomer(d){
+  $('custName').textContent = d.full_name || 'Member';
+  $('custBalance').textContent = d.points_balance ?? 0;
+  const chips = $('custChips'); chips.innerHTML='';
+  const eligible = d.eligible_tiers || [];
+  if (eligible.length){
+    eligible.forEach(t=>{ const c=document.createElement('div'); c.className='chip'; c.textContent=TIER_LABELS[t]||(t+' pts'); chips.appendChild(c); });
+  } else {
+    const c=document.createElement('div'); c.className='chip muted'; c.textContent='No rewards unlocked yet'; chips.appendChild(c);
+  }
+  // panels
+  $('awardPanel').style.display = state.mode==='award' ? 'flex' : 'none';
+  $('redeemPanel').style.display = state.mode==='redeem' ? 'flex' : 'none';
+  if (state.mode==='award'){ $('amount').value=''; clearMsg($('awardErr')); setTimeout(()=>$('amount').focus(),150); }
+  if (state.mode==='redeem'){ buildTiers(eligible); clearMsg($('redeemErr')); }
+}
+
+/* ===================== AWARD ===================== */
+async function confirmAward(){
+  const raw = ($('amount').value||'').trim().replace(/[£,\s]/g,'');
+  const amount = parseFloat(raw);
+  if (!raw || isNaN(amount) || amount <= 0){ setMsg($('awardErr'),'Enter a valid amount','err'); return; }
+  $('awardConfirm').setAttribute('disabled','');
+  try {
+    const d = await api('award', { qr: state.qr, amount });
+    showResult({
+      ico:'＋', big:'+' + (d.points_earned ?? 0) + ' pts',
+      sub:(d.full_name||'Member') + ' · new balance ' + (d.points_balance ?? 0),
+      draw: !!d.prize_draw_triggered
+    });
+  } catch (e) { handleActionError(e, false, $('awardErr')); }
+  finally { $('awardConfirm').removeAttribute('disabled'); }
+}
+
+/* ===================== REDEEM ===================== */
+function buildTiers(eligible){
+  const list = $('tierList'); list.innerHTML=''; state.selectedTier=null; $('redeemConfirm').setAttribute('disabled','');
+  const tiers = (eligible||[]).filter(t=>TIER_LABELS[t]);
+  if (!tiers.length){
+    const p=document.createElement('p'); p.className='sub'; p.textContent='Not enough points to redeem yet.'; list.appendChild(p);
+    return;
+  }
+  tiers.forEach(t=>{
+    const b=document.createElement('button'); b.className='tier'; b.dataset.tier=t;
+    b.innerHTML='<span class="pts">'+t+'</span><span class="nm">'+(TIER_LABELS[t]).toUpperCase()+'</span>';
+    b.onclick=()=>{ state.selectedTier=t; document.querySelectorAll('.tier').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); $('redeemConfirm').removeAttribute('disabled'); };
+    list.appendChild(b);
+  });
+}
+async function confirmRedeem(){
+  if (!state.selectedTier){ setMsg($('redeemErr'),'Select a reward first','err'); return; }
+  $('redeemConfirm').setAttribute('disabled','');
+  try {
+    const d = await api('redeem', { qr: state.qr, tier: state.selectedTier });
+    showResult({ ico:'★', big:'Redeemed', sub:(d.reward_label||TIER_LABELS[state.selectedTier]) + ' · balance reset to ' + (d.points_balance ?? 0), draw:false });
+  } catch (e) { handleActionError(e, false, $('redeemErr')); }
+  finally { if (state.selectedTier) $('redeemConfirm').removeAttribute('disabled'); }
+}
+
+/* ===================== RESULT ===================== */
+function showResult({ico,big,sub,draw}){
+  $('resIco').textContent = ico || '✓';
+  $('resBig').textContent = big || 'Done';
+  $('resSub').textContent = sub || '';
+  $('resDraw').style.display = draw ? 'block' : 'none';
+  show('result');
+}
+
+/* ===================== ERROR ROUTING ===================== */
+function handleActionError(e, fromScan, msgEl){
+  const code = e && e.code;
+  if (code === 'STAFF_SESSION_INVALID'){ handleSessionInvalid(); return; }
+  if (code === 'QR_INVALID_OR_EXPIRED'){
+    // Code expired between showing and confirming — rescan.
+    setMsg($('scanErr'),'That code has expired. Ask the customer to show it again.','err');
+    $('scanRetry').style.display='block';
+    $('scanTitle').textContent = state.mode === 'award' ? 'ADD POINTS · SCAN' : 'REDEEM · SCAN';
+    show('scan');
+    return;
+  }
+  const friendly = {
+    INSUFFICIENT_POINTS: 'Not enough points for that reward.',
+    INVALID_AMOUNT: 'Enter a valid amount.',
+    AMOUNT_TOO_LARGE: 'That amount is too large.',
+    PROFILE_NOT_FOUND: 'Customer not found. Ask them to reopen their code.',
+    NETWORK: 'Network error — check the connection.'
+  }[code] || (e && e.message) || 'Something went wrong. Try again.';
+  if (msgEl) setMsg(msgEl, friendly, 'err');
+  else { setMsg($('scanErr'), friendly, 'err'); $('scanRetry').style.display='block'; show('scan'); }
+}
+
+/* ===================== BOOT ===================== */
+buildKeypad(); renderDots();
+if (sessionValid()){ $('lockBtn').classList.add('show'); goHome(); }
+else { gotoPin(); }
+window.addEventListener('pagehide', stopScan);
+</script>
+</body>
+</html>
