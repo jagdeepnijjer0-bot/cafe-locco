@@ -6,6 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
   Dimensions,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,46 +18,82 @@ import { Spacing, Radius } from '@/constants/theme';
 
 const { width } = Dimensions.get('window');
 const QR_SIZE = Math.min(width - 96, 300);
-// Server token TTL is ~60s; refresh a little early so the code is always valid.
-const REFRESH_MS = 50_000;
+// Fallback TTL only if the server omits expires_at/ttl_seconds (it shouldn't).
+const FALLBACK_TTL = 60;
 
-/** Full-screen, bright, auto-rotating loyalty QR. Encodes the short-lived
- *  token from the `rewards-qr-token` edge function (never the raw profile id). */
+function nowSec() {
+  return Math.floor(Date.now() / 1000);
+}
+
+/** Full-screen, bright loyalty QR with a live countdown to the server-provided
+ *  expiry. When it expires (or the app returns from the background after expiry)
+ *  the code is hidden and a manual "get a new code" button is shown — there is
+ *  no background auto-refresh loop, so an expired code can never be scanned. */
 export function RewardsQrModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [token, setToken] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [now, setNow] = useState<number>(nowSec());
+
+  const tick = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchToken = useCallback(async () => {
-    setRefreshing(true);
+    setLoading(true);
     setError(null);
+    setToken(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('rewards-qr-token');
       if (fnError) throw fnError;
       if (!data?.token) throw new Error('No code returned');
+      const exp =
+        typeof data.expires_at === 'number'
+          ? data.expires_at
+          : nowSec() + (typeof data.ttl_seconds === 'number' ? data.ttl_seconds : FALLBACK_TTL);
       setToken(data.token as string);
+      setExpiresAt(exp);
+      setNow(nowSec());
     } catch (e) {
+      setToken(null);
+      setExpiresAt(null);
       setError(e instanceof Error ? e.message : 'Could not load your code');
     } finally {
-      setRefreshing(false);
+      setLoading(false);
     }
   }, []);
 
+  // While visible: fetch once, tick the clock every second (countdown only — no
+  // auto-refetch), and re-sync the clock when returning from the background.
   useEffect(() => {
-    if (visible) {
-      fetchToken();
-      timer.current = setInterval(fetchToken, REFRESH_MS);
-    } else {
+    if (!visible) {
       setToken(null);
+      setExpiresAt(null);
+      setError(null);
+      setLoading(false);
+      return;
     }
+
+    fetchToken();
+    setNow(nowSec());
+    tick.current = setInterval(() => setNow(nowSec()), 1000);
+
+    const sub = AppState.addEventListener('change', (s) => {
+      // Re-sync the clock on foreground so an expiry that passed while
+      // backgrounded shows the refresh state immediately (no stale QR).
+      if (s === 'active') setNow(nowSec());
+    });
+
     return () => {
-      if (timer.current) {
-        clearInterval(timer.current);
-        timer.current = null;
+      if (tick.current) {
+        clearInterval(tick.current);
+        tick.current = null;
       }
+      sub.remove();
     };
   }, [visible, fetchToken]);
+
+  const remaining = expiresAt != null ? Math.max(0, expiresAt - now) : 0;
+  const hasValidCode = !!token && expiresAt != null && remaining > 0;
 
   return (
     <Modal visible={visible} animationType="fade" onRequestClose={onClose} statusBarTranslucent>
@@ -73,32 +110,42 @@ export function RewardsQrModal({ visible, onClose }: { visible: boolean; onClose
             SHOW THIS TO STAFF TO EARN OR REDEEM
           </Text>
 
-          <View style={styles.card}>
-            {token ? (
-              <QRCode value={token} size={QR_SIZE} backgroundColor="#FFFFFF" color="#000000" />
-            ) : (
-              <View style={[styles.placeholder, { width: QR_SIZE, height: QR_SIZE }]}>
-                {error ? (
-                  <Text variant="caption" center color={Colors.error}>
-                    {error}
-                  </Text>
-                ) : (
-                  <ActivityIndicator color={Colors.gold} />
-                )}
+          {hasValidCode ? (
+            <>
+              <View style={styles.cardLight}>
+                <QRCode value={token as string} size={QR_SIZE} backgroundColor="#FFFFFF" color="#000000" />
               </View>
-            )}
-          </View>
-
-          <Text variant="caption" center tracking={1} color={Colors.textMuted} style={styles.note}>
-            {refreshing ? 'Refreshing…' : 'Refreshes automatically — keep this screen open'}
-          </Text>
-          {error ? (
-            <Pressable onPress={fetchToken} hitSlop={8} style={styles.retry}>
-              <Text variant="label" tracking={2} color={Colors.gold}>
-                TAP TO RETRY
+              <Text variant="label" center tracking={2} color={Colors.gold} style={styles.countdown}>
+                EXPIRES IN {remaining}s
               </Text>
-            </Pressable>
-          ) : null}
+              <Text variant="caption" center tracking={1} color={Colors.textMuted} style={styles.note}>
+                Keep this screen open while staff scan it
+              </Text>
+            </>
+          ) : (
+            <View style={[styles.cardDark, { width: QR_SIZE + Spacing.lg * 2, height: QR_SIZE + Spacing.lg * 2 }]}>
+              {loading ? (
+                <ActivityIndicator color={Colors.gold} />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={44} color={Colors.gold} />
+                  <Text variant="caption" center color={error ? Colors.error : Colors.textMuted} style={styles.refreshMsg}>
+                    {error ? error : 'This code has expired'}
+                  </Text>
+                  <Pressable
+                    onPress={fetchToken}
+                    hitSlop={8}
+                    style={({ pressed }) => [styles.refreshBtn, pressed && styles.refreshBtnPressed]}
+                  >
+                    <Ionicons name="refresh" size={18} color={Colors.gold} />
+                    <Text variant="label" tracking={1.5} color={Colors.gold}>
+                      TAP TO GET A NEW CODE
+                    </Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+          )}
         </View>
       </SafeAreaView>
     </Modal>
@@ -121,12 +168,34 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
   title: { marginBottom: Spacing.sm },
   sub: { marginBottom: Spacing.xl },
-  card: {
+  cardLight: {
     backgroundColor: '#FFFFFF',
     padding: Spacing.lg,
     borderRadius: Radius.lg,
   },
-  placeholder: { alignItems: 'center', justifyContent: 'center' },
-  note: { marginTop: Spacing.xl, maxWidth: 280 },
-  retry: { marginTop: Spacing.md },
+  cardDark: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.goldBorder,
+    borderRadius: Radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  countdown: { marginTop: Spacing.lg },
+  note: { marginTop: Spacing.sm, maxWidth: 280 },
+  refreshMsg: { maxWidth: 220 },
+  refreshBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: Colors.gold,
+    borderRadius: Radius.pill,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: Spacing.xs,
+  },
+  refreshBtnPressed: { opacity: 0.7, backgroundColor: 'rgba(212,175,55,0.08)' },
 });
