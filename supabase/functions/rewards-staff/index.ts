@@ -33,6 +33,11 @@ const SESSION_TTL = Number(Deno.env.get('REWARDS_STAFF_SESSION_SECONDS') ?? '432
 const MAX_AWARD = Number(Deno.env.get('REWARDS_MAX_AWARD') ?? '1000');
 const REDEEM_TIERS = [75, 150, 250];
 
+// Email (best-effort milestone notifications; same pattern as notify-submission).
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
+const NOTIFY_EMAIL = Deno.env.get('NOTIFY_EMAIL') ?? '';
+const NOTIFY_FROM = Deno.env.get('NOTIFY_FROM') ?? 'Cafe Locco <onboarding@resend.dev>';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -108,6 +113,145 @@ async function requireQrProfile(body: Record<string, unknown>): Promise<string> 
   return qr.pid;
 }
 
+// ---- milestone emails (best effort; never affect the award result) --------
+const REWARD_PHRASE: Record<number, string> = {
+  75: 'a free drink',
+  150: 'a free meal',
+  250: 'a free dessert',
+  500: 'a prize draw entry',
+};
+const REWARD_HONOUR: Record<number, string> = {
+  75: 'Free drink',
+  150: 'Free meal',
+  250: 'Free dessert',
+  500: 'Prize draw entry (balance reset to 0)',
+};
+
+/** Highest milestone CROSSED by this award, or null. Uses only the data the
+ *  rewards_award RPC returns: prize_draw_triggered === true means 500 was
+ *  crossed (server auto-entered the draw and reset the balance); otherwise a
+ *  tier counts only when the balance moves from below it to at/above it. */
+function milestoneCrossed(d: Record<string, unknown>): number | null {
+  if (d?.prize_draw_triggered === true) return 500;
+  const earned = Number(d?.points_earned ?? 0);
+  const after = Number(d?.points_balance ?? 0);
+  const before = after - earned;
+  for (const t of [250, 150, 75]) {
+    if (before < t && t <= after) return t;
+  }
+  return null;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** POST one email via Resend with a ~4s timeout. Never throws. */
+async function sendResend(payload: Record<string, unknown>): Promise<void> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      console.error('[rewards-staff] resend non-ok', res.status, txt.slice(0, 200));
+    }
+  } catch (e) {
+    console.error('[rewards-staff] resend error', e instanceof Error ? e.message : String(e));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Send the customer + restaurant milestone emails. Best effort; never throws. */
+async function sendMilestoneEmails(
+  pid: string,
+  d: Record<string, unknown>,
+  milestone: number,
+): Promise<void> {
+  try {
+    if (!RESEND_API_KEY || !NOTIFY_EMAIL) {
+      console.error('[rewards-staff] milestone email skipped: RESEND_API_KEY or NOTIFY_EMAIL not set');
+      return;
+    }
+
+    const { data: prof } = await supabase
+      .from('restaurant_profiles')
+      .select('email, full_name, phone')
+      .eq('id', pid)
+      .single();
+
+    const fullName = String((prof?.full_name ?? d.full_name ?? 'Member') || 'Member');
+    const custEmail = prof?.email ? String(prof.email) : '';
+    const phone = prof?.phone ? String(prof.phone) : '-';
+    const balance = Number(d?.points_balance ?? 0);
+    const phrase = REWARD_PHRASE[milestone];
+    const honour = REWARD_HONOUR[milestone];
+
+    // a. Customer email (to their account email).
+    if (custEmail) {
+      const subject = milestone === 500
+        ? 'You have been entered into the Café Locco prize draw'
+        : `You have reached ${milestone} points at Café Locco`;
+      const heading = milestone === 500
+        ? 'You have reached 500 points, so you have been entered into the Café Locco prize draw. Your points have reset to 0 so you can start earning again.'
+        : `You have reached ${milestone} points, which unlocks ${phrase}.`;
+      const text = [
+        heading,
+        '',
+        `Your current balance is ${balance} points. Points never expire.`,
+        'Show your QR code in the app to staff at the café to claim.',
+        '',
+        'Café Locco, 139 Daventry Road, Coventry CV3 5HD',
+      ].join('\n');
+      const html =
+        `<div style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#111;">` +
+        `<h1 style="font-size:20px;margin:0 0 12px;">Café Locco Rewards</h1>` +
+        `<p style="font-size:16px;line-height:1.5;margin:0 0 12px;">${escapeHtml(heading)}</p>` +
+        `<p style="font-size:16px;line-height:1.5;margin:0 0 12px;">Your current balance is <strong>${balance} points</strong>. Points never expire.</p>` +
+        `<p style="font-size:16px;line-height:1.5;margin:0 0 12px;">Show your QR code in the app to staff at the café to claim.</p>` +
+        `<p style="font-size:13px;color:#666;margin:16px 0 0;">Café Locco, 139 Daventry Road, Coventry CV3 5HD</p>` +
+        `</div>`;
+      await sendResend({ from: NOTIFY_FROM, to: custEmail, subject, text, html });
+    } else {
+      console.error('[rewards-staff] milestone email: no customer email on profile');
+    }
+
+    // b. Restaurant email (to NOTIFY_EMAIL).
+    const when = new Date().toLocaleString('en-GB', {
+      timeZone: 'Europe/London',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+    const rSubject = milestone === 500
+      ? `Locco Rewards: ${fullName} entered the prize draw`
+      : `Locco Rewards: ${fullName} reached ${milestone} points`;
+    const milestoneLabel = milestone === 500 ? '500 points (prize draw entry)' : `${milestone} points`;
+    const rLines = [
+      `Name: ${fullName}`,
+      `Email: ${custEmail || '-'}`,
+      `Phone: ${phone}`,
+      `Milestone: ${milestoneLabel}`,
+      `Reward to honour: ${honour}`,
+      `Current balance: ${balance} points`,
+      `Time (Europe/London): ${when}`,
+    ];
+    const rHtml =
+      `<div style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:480px;color:#111;">` +
+      `<h2 style="font-size:18px;margin:0 0 12px;">Locco Rewards milestone</h2>` +
+      rLines.map((l) => `<p style="font-size:15px;line-height:1.5;margin:0 0 6px;">${escapeHtml(l)}</p>`).join('') +
+      `</div>`;
+    await sendResend({ from: NOTIFY_FROM, to: NOTIFY_EMAIL, subject: rSubject, text: rLines.join('\n'), html: rHtml });
+  } catch (e) {
+    console.error('[rewards-staff] milestone email error', e instanceof Error ? e.message : String(e));
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
@@ -159,6 +303,23 @@ serve(async (req) => {
         p_profile_id: pid, p_amount: amount, p_created_by: createdBy,
       });
       if (error) throw new Error(error.message);
+
+      // Best-effort milestone emails. Must never change the award result, never
+      // throw, and never delay the staff response (fire-and-forget when the
+      // runtime supports it).
+      try {
+        const awardData = (data ?? {}) as Record<string, unknown>;
+        const milestone = milestoneCrossed(awardData);
+        if (milestone) {
+          const emailWork = sendMilestoneEmails(pid, awardData, milestone);
+          const er = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+          if (er && typeof er.waitUntil === 'function') er.waitUntil(emailWork);
+          else await emailWork; // emailWork never throws and each send times out at ~4s
+        }
+      } catch (e) {
+        console.error('[rewards-staff] milestone dispatch error', e instanceof Error ? e.message : String(e));
+      }
+
       return json(data);
     }
 
