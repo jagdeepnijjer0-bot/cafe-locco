@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect, Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 
 import { Screen } from '@/components/ui/Screen';
@@ -83,16 +83,64 @@ function SignedOut({ open }: { open: () => void }) {
 /* ------------------------------------------------------------------ */
 function SignedIn({ open }: { open: () => void }) {
   const { user, profile } = useAuthContext();
+  const router = useRouter();
   const [qty, setQty] = useState(MIN_QTY);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // True only while this screen is the focused route. Opening the in-app
+  // browser does not blur it, but the cafelocco://shop-success deep link
+  // navigating away does, and so does unmounting. We read this before every
+  // navigation so we never double-navigate or set state on a dead screen.
+  const focusedRef = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      focusedRef.current = true;
+      return () => {
+        focusedRef.current = false;
+      };
+    }, []),
+  );
 
   const email = user?.email ?? profile?.email ?? '';
   const itemTotal = UNIT_PRICE_PENCE * qty;
   const total = itemTotal + DELIVERY_PENCE;
 
+  // After the browser closes, the webhook writes the order a moment later. Poll
+  // the user's own rows (RLS own-read) for the newest one created since this
+  // checkout began. Returns the Stripe session id of that order, or null.
+  const pollForOrder = useCallback(
+    async (startedAt: Date): Promise<string | null> => {
+      const sinceIso = new Date(startedAt.getTime() - 60_000).toISOString();
+      const MAX_ATTEMPTS = 7; // ~10s total at 1.5s intervals
+      for (let i = 0; i < MAX_ATTEMPTS; i += 1) {
+        // Stop if we unmounted or the deep link already moved us to success.
+        if (!focusedRef.current || !user?.id) return null;
+        const { data } = await supabase
+          .from('shop_orders')
+          .select('order_ref, stripe_session_id')
+          .eq('user_id', user.id)
+          .gte('created_at', sinceIso)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!focusedRef.current) return null;
+        const sessionId = (data as { stripe_session_id?: string } | null)?.stripe_session_id;
+        if (sessionId) return sessionId;
+        if (i < MAX_ATTEMPTS - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+      }
+      return null;
+    },
+    [user?.id],
+  );
+
   async function handleCheckout() {
     if (checkoutLoading) return;
     setCheckoutLoading(true);
+    setNotice(null);
+    const startedAt = new Date();
     try {
       const { data, error } = await supabase.functions.invoke('create-shop-checkout', {
         body: { quantity: qty },
@@ -101,10 +149,25 @@ function SignedIn({ open }: { open: () => void }) {
       const url = (data as { url?: string } | null)?.url;
       if (!url) throw new Error('No checkout URL returned');
       await WebBrowser.openBrowserAsync(url);
+      // Browser dismissed. If the deep link already took us to the success
+      // screen, focusedRef is false and polling exits without navigating.
+      const sessionId = await pollForOrder(startedAt);
+      if (sessionId && focusedRef.current) {
+        setCheckoutLoading(false);
+        router.replace(
+          `/shop-success?session_id=${encodeURIComponent(sessionId)}` as Href,
+        );
+        return;
+      }
+      if (focusedRef.current) {
+        setNotice('If you completed payment, your confirmation will arrive by email shortly.');
+      }
     } catch {
-      Alert.alert('Checkout', 'We could not start checkout. Please try again in a moment.');
+      if (focusedRef.current) {
+        Alert.alert('Checkout', 'We could not start checkout. Please try again in a moment.');
+      }
     } finally {
-      setCheckoutLoading(false);
+      if (focusedRef.current) setCheckoutLoading(false);
     }
   }
 
@@ -173,6 +236,12 @@ function SignedIn({ open }: { open: () => void }) {
         loading={checkoutLoading}
         style={styles.checkoutBtn}
       />
+
+      {notice ? (
+        <View style={styles.noticeBox}>
+          <Text style={styles.noticeText}>{notice}</Text>
+        </View>
+      ) : null}
 
       <Text style={styles.payCaption}>
         Secure payment by Stripe. Card, Apple Pay or Google Pay. UK delivery only.
@@ -245,6 +314,15 @@ const styles = StyleSheet.create({
   sumTotalValue: { fontFamily: FONT, fontWeight: '700', fontSize: 18, color: Colors.gold },
 
   checkoutBtn: { marginBottom: Spacing.md },
+  noticeBox: {
+    borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.goldBorder,
+    backgroundColor: Colors.surface, paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  noticeText: {
+    fontFamily: FONT, fontWeight: '400', fontSize: 13, lineHeight: 19, letterSpacing: 0.2,
+    color: Colors.gold, textAlign: 'center',
+  },
   payCaption: {
     fontFamily: FONT, fontWeight: '400', fontSize: 11.5, lineHeight: 17, letterSpacing: 0.3,
     color: Colors.textMuted, textAlign: 'center', maxWidth: 320, alignSelf: 'center',
