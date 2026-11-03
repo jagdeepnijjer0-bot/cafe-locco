@@ -9,7 +9,7 @@ import {
   AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { Text } from '@/components/ui/Text';
 import { supabase } from '@/lib/supabase';
@@ -37,6 +37,7 @@ export function RewardsQrModal({ visible, onClose }: { visible: boolean; onClose
   const [now, setNow] = useState<number>(nowSec());
 
   const tick = useRef<ReturnType<typeof setInterval> | null>(null);
+  const insets = useSafeAreaInsets();
 
   const fetchToken = useCallback(async () => {
     setLoading(true);
@@ -98,10 +99,6 @@ export function RewardsQrModal({ visible, onClose }: { visible: boolean; onClose
   return (
     <Modal visible={visible} animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <SafeAreaView style={styles.backdrop} edges={['top', 'bottom']}>
-        <Pressable onPress={onClose} hitSlop={14} style={styles.closeBtn}>
-          <Ionicons name="close" size={26} color={Colors.white} />
-        </Pressable>
-
         <View style={styles.center}>
           <Text variant="heading" center tracking={3} color={Colors.white} style={styles.title}>
             YOUR REWARDS CODE
@@ -148,6 +145,16 @@ export function RewardsQrModal({ visible, onClose }: { visible: boolean; onClose
           )}
         </View>
       </SafeAreaView>
+
+      {/* Fixed close button: absolute top-right, safe-area aware, never moves
+          with content, styled to match the main menu close button. */}
+      <Pressable
+        onPress={onClose}
+        hitSlop={12}
+        style={[styles.closeBtn, { top: insets.top + 8 }]}
+      >
+        <Ionicons name="close" size={22} color={Colors.textPrimary} />
+      </Pressable>
     </Modal>
   );
 }
@@ -155,15 +162,18 @@ export function RewardsQrModal({ visible, onClose }: { visible: boolean; onClose
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: '#000' },
   closeBtn: {
-    alignSelf: 'flex-end',
-    width: 44,
-    height: 44,
-    margin: Spacing.md,
+    position: 'absolute',
+    right: Spacing.md,
+    // top is set from the safe-area inset at render time (insets.top + 8).
+    width: 40,
+    height: 40,
     borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
+    elevation: 10,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 60 },
   title: { marginBottom: Spacing.sm },
