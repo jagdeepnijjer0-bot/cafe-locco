@@ -27,3 +27,4 @@ Calls the already-deployed `rewards-staff` edge function
 `login` → `lookup` (shows name + balance + eligible tiers) → `award` / `redeem`.
 The staff PIN is verified server-side; the returned `staff_token` is kept only in
 `sessionStorage`. QR scanning uses `html5-qrcode@2.3.8` from a pinned CDN.
+Hosted on Vercel (project cafe-locco, root directory staff-web, production branch claude/cafe-locco-expo).
