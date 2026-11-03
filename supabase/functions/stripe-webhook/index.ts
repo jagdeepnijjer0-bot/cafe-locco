@@ -399,7 +399,19 @@ serve(async (req) => {
         // Shop order (mode: payment, kind: shop). Handled separately; the
         // subscription path below is exactly as before.
         if (session.mode === 'payment' && session.metadata?.kind === 'shop' && session.payment_status === 'paid') {
-          await handleShopOrder(session);
+          try {
+            await handleShopOrder(session);
+          } catch (shopErr) {
+            // Saving the order failed for a reason OTHER than a duplicate
+            // (duplicates return normally from handleShopOrder, so they 200;
+            //  email failures never throw, so they never reach here).
+            // Return 500 so Stripe retries this delivery.
+            console.error(`[webhook] shop order save failed for session ${session.id}:`, (shopErr as Error).message);
+            return new Response(
+              JSON.stringify({ error: 'shop order save failed' }),
+              { status: 500, headers: { 'Content-Type': 'application/json' } },
+            );
+          }
           break;
         }
 
