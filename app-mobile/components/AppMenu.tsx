@@ -161,9 +161,21 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
 
           <Animated.View style={[styles.panel, { transform: [{ translateX: slide }] }]}>
             <SafeAreaView style={styles.panelInner} edges={['top', 'bottom']}>
-              <Pressable onPress={close} hitSlop={12} style={styles.closeBtn}>
-                <Ionicons name="close" size={22} color={Colors.textPrimary} />
-              </Pressable>
+              <View style={styles.topRow}>
+                <Pressable
+                  onPress={() => navigate('/shop' as Href)}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.shopBtn, pressed && styles.shopBtnPressed]}
+                >
+                  <Ionicons name="bag-outline" size={18} color={Colors.gold} />
+                  <Text variant="caption" tracking={2} color={Colors.gold}>
+                    SHOP
+                  </Text>
+                </Pressable>
+                <Pressable onPress={close} hitSlop={12} style={styles.closeBtn}>
+                  <Ionicons name="close" size={22} color={Colors.textPrimary} />
+                </Pressable>
+              </View>
 
               <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 {isLoggedIn && (
@@ -230,6 +242,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // SHOP button shares the top row with the X close button.
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  shopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 40,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.gold,
+    backgroundColor: '#000',
+  },
+  shopBtnPressed: { opacity: 0.7 },
   scroll: { paddingTop: 32, paddingBottom: 32 },
   section: { marginBottom: 32 },
   sectionTitle: { marginBottom: 16, paddingHorizontal: 8, color: Colors.textPrimary },
