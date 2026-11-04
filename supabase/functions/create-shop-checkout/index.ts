@@ -51,6 +51,9 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      // Show Stripe's own "Add promotion code" box on the hosted Checkout page.
+      // Price and delivery remain server-set; the discount is applied by Stripe.
+      allow_promotion_codes: true,
       payment_method_types: ['card'],
       customer_email: user.email,
       line_items: [

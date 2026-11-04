@@ -11,6 +11,8 @@
 //   5. an order SAVE failure (non-duplicate) returns 500 (so Stripe retries),
 //      and a retry after recovery creates the order and returns 200
 //   6. an EMAIL failure still returns 200 and the order is kept
+//   7. a promo-code order shows a discount line on both emails and the total
+//      paid stays exactly as Stripe reports (no discount -> no line)
 
 // ---- fakes -----------------------------------------------------------------
 const db = { shop_orders: [] };            // in-memory table (unique session + ref)
@@ -66,6 +68,7 @@ async function handleShopOrder(session) {
   const cust = session.customer_details ?? null;
   const shipping = extractShipping(session);
   const orderRef = makeOrderRef();
+  const discountPence = Math.max(0, SHOP_UNIT_PRICE_PENCE * quantity + SHOP_DELIVERY_PENCE - totalPence);
   const order = {
     id: `row_${db.shop_orders.length + 1}`,
     order_ref: orderRef,
@@ -73,6 +76,7 @@ async function handleShopOrder(session) {
     user_id: session.metadata?.user_id ?? null,
     quantity,
     total_pence: totalPence,
+    discount_pence: discountPence,
     customer_email: cust?.email ?? session.customer_email ?? null,
     customer_name: cust?.name ?? null,
     customer_phone: cust?.phone ?? null,
@@ -88,14 +92,16 @@ async function handleShopOrder(session) {
 
   const addr = addressLines(order.shipping_name ?? cust?.name ?? null, shipping.address);
   const itemTotal = SHOP_UNIT_PRICE_PENCE * quantity;
+  // Discount line is shown between delivery and total only when a promo applied.
+  const discountLine = discountPence > 0 ? `-${gbp(discountPence)}` : null;
   const custOk = order.customer_email
     ? await sendResend({ kind: 'customer', to: order.customer_email, reply_to: 'info@cafelocco.co.uk',
         subject: `Your Cafe Locco order ${orderRef}`,
-        summary: { ref: orderRef, item: SHOP_PRODUCT_NAME, quantity, itemTotal: gbp(itemTotal), delivery: gbp(SHOP_DELIVERY_PENCE), total: gbp(totalPence), address: addr } })
+        summary: { ref: orderRef, item: SHOP_PRODUCT_NAME, quantity, itemTotal: gbp(itemTotal), delivery: gbp(SHOP_DELIVERY_PENCE), discount: discountLine, total: gbp(totalPence), address: addr } })
     : false;
   const restOk = await sendResend({ kind: 'restaurant', to: 'restaurant(NOTIFY_EMAIL)',
     subject: `Locco Shop: new order ${orderRef} (${quantity} x Locco Coffee Beans)`,
-    summary: { ref: orderRef, customer: order.customer_name, email: order.customer_email, phone: order.customer_phone, address: addr, total: gbp(totalPence) } });
+    summary: { ref: orderRef, customer: order.customer_name, email: order.customer_email, phone: order.customer_phone, address: addr, discount: discountLine, total: gbp(totalPence) } });
   // stamp (no throw)
   if (custOk) order.customer_email_sent_at = 'ts';
   if (restOk) order.restaurant_email_sent_at = 'ts';
@@ -145,6 +151,19 @@ const shopEventNewShape = {
     customer_details: { email: 'leo@example.com', name: 'Leo <b>Tester</b>', phone: '+447700900999' },
     payment_intent: 'pi_test_2',
     collected_information: { shipping_details: { name: 'Leo Tester', address: { line1: '9 Park Road', city: 'Leeds', postal_code: 'LS1 2AB', country: 'GB' } } },
+  } },
+};
+// Promo code applied: amount_total is below item + delivery by £5.00.
+// Expected full price: 2 x £9.99 + £3.75 = £23.73; paid £18.73 -> discount £5.00.
+const shopEventDiscount = {
+  type: 'checkout.session.completed',
+  data: { object: {
+    id: 'cs_test_shop_promo', mode: 'payment', payment_status: 'paid',
+    metadata: { kind: 'shop', user_id: 'user-promo', quantity: '2' },
+    amount_total: 999 * 2 + 375 - 500, currency: 'gbp',
+    customer_details: { email: 'priya@example.com', name: 'Priya Patel', phone: '+447700900555' },
+    payment_intent: 'pi_test_promo',
+    shipping_details: { name: 'Priya Patel', address: { line1: '3 Mill Lane', city: 'Bristol', postal_code: 'BS1 4DJ', country: 'GB' } },
   } },
 };
 
@@ -199,6 +218,17 @@ console.log('6) email fails ->  status:', res.status, '(expect 200) | order kept
   '| emails sent:', emails.length - beforeEmail.emails, '| sent stamps:', oEmail?.customer_email_sent_at, oEmail?.restaurant_email_sent_at);
 FAULT.failEmail = false;
 
+// 7) discounted order (promo code) -> 200, discount line on both emails, total paid unchanged
+res = await processEvent(shopEventDiscount);
+const oPromo = db.shop_orders.find((o) => o.stripe_session_id === 'cs_test_shop_promo');
+const promoEmails = emails.filter((e) => e.summary?.ref === oPromo.order_ref);
+console.log('7) discount ->     status:', res.status, '| discount:', gbp(oPromo.discount_pence),
+  '| total paid:', gbp(oPromo.total_pence),
+  '| email discount line:', promoEmails[0]?.summary?.discount, '(customer)', promoEmails[1]?.summary?.discount, '(restaurant)');
+
+// confirm a full-price order carries no discount line
+const fullPriceEmails = emails.filter((e) => e.summary?.ref === db.shop_orders[0].order_ref);
+
 // ---- assertions ------------------------------------------------------------
 const checks = [
   ['shop event returned 200', true /* res tracked above */],
@@ -213,6 +243,10 @@ const checks = [
   ['(b) duplicate returned 200 and added nothing', db.shop_orders.filter((o) => o.stripe_session_id === 'cs_fail_1').length === 1],
   ['(c) email failure kept the order', !!oEmail],
   ['(c) email failure sent no emails + no sent stamps', oEmail?.customer_email_sent_at === null && oEmail?.restaurant_email_sent_at === null],
+  ['discount computed = £5.00 (2 x £9.99 + £3.75 - £18.73)', oPromo.discount_pence === 500],
+  ['discount shown as -£5.00 on both emails', promoEmails.length === 2 && promoEmails.every((e) => e.summary.discount === '-£5.00')],
+  ['discounted order total paid unchanged (£18.73)', oPromo.total_pence === 999 * 2 + 375 - 500],
+  ['full-price order has no discount line', fullPriceEmails.length > 0 && fullPriceEmails.every((e) => e.summary.discount == null)],
 ];
 // re-derive the exact statuses for the strict assertions
 const strict = [];

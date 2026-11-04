@@ -254,6 +254,9 @@ async function handleShopOrder(session: Stripe.Checkout.Session): Promise<void> 
   const customerEmail = row.customer_email as string | null;
   const addrLines = addressLines((row.shipping_name as string | null) ?? (cust?.name ?? null), shipping.address);
   const itemTotal = SHOP_UNIT_PRICE_PENCE * quantity;
+  // A Stripe promotion code reduces amount_total below item + delivery. Show the
+  // difference as a discount line; the total paid stays exactly as Stripe reports.
+  const discountPence = Math.max(0, itemTotal + SHOP_DELIVERY_PENCE - totalPence);
 
   // a. Customer confirmation
   let custSent = false;
@@ -268,6 +271,7 @@ async function handleShopOrder(session: Stripe.Checkout.Session): Promise<void> 
       `Quantity: ${quantity}`,
       `Item total: ${gbp(itemTotal)}`,
       `Delivery (Royal Mail Tracked 48): ${gbp(SHOP_DELIVERY_PENCE)}`,
+      ...(discountPence > 0 ? [`Discount: -${gbp(discountPence)}`] : []),
       `Total paid: ${gbp(totalPence)}`,
       '',
       'Delivery address:',
@@ -289,6 +293,7 @@ async function handleShopOrder(session: Stripe.Checkout.Session): Promise<void> 
       `<tr><td style="padding-right:16px;">Quantity</td><td>${quantity}</td></tr>` +
       `<tr><td style="padding-right:16px;">Item total</td><td>${gbp(itemTotal)}</td></tr>` +
       `<tr><td style="padding-right:16px;">Delivery</td><td>Royal Mail Tracked 48, ${gbp(SHOP_DELIVERY_PENCE)}</td></tr>` +
+      (discountPence > 0 ? `<tr><td style="padding-right:16px;">Discount</td><td>-${gbp(discountPence)}</td></tr>` : '') +
       `<tr><td style="padding-right:16px;"><strong>Total paid</strong></td><td><strong>${gbp(totalPence)}</strong></td></tr>` +
       '</table>' +
       '<p style="font-size:15px;line-height:1.5;margin:0 0 4px;"><strong>Delivery address</strong></p>' +
@@ -329,6 +334,7 @@ async function handleShopOrder(session: Stripe.Checkout.Session): Promise<void> 
       `Quantity: ${quantity} x ${SHOP_PRODUCT_NAME}`,
       `Item total: ${gbp(itemTotal)}`,
       `Delivery: ${gbp(SHOP_DELIVERY_PENCE)}`,
+      ...(discountPence > 0 ? [`Discount: -${gbp(discountPence)}`] : []),
       `Total paid: ${gbp(totalPence)}`,
       `Stripe payment id: ${(row.stripe_payment_intent_id as string | null) ?? '-'}`,
       `Time (Europe/London): ${when}`,
